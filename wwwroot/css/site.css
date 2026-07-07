@@ -507,6 +507,41 @@ img {
   padding: 26px 0 52px;
 }
 
+.category-hero {
+  padding: 42px 0;
+  color: #fff;
+  background:
+    linear-gradient(135deg, rgba(0, 63, 123, 0.96), rgba(0, 91, 170, 0.86)),
+    url("https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=1800&q=80") center / cover;
+}
+
+.category-hero h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  font-weight: 850;
+}
+
+.category-hero p {
+  max-width: 720px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.breadcrumb-link {
+  color: var(--gold);
+  font-size: 0.86rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.breadcrumb-link:hover {
+  color: #fff;
+}
+
+.category-page {
+  padding: 34px 0 56px;
+}
+
 .news-section {
   min-width: 0;
 }

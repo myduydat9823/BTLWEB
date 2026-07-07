@@ -1,0 +1,30 @@
+@model CategoryIndexViewModel
+
+@{
+    ViewData["Title"] = Model.CategoryName;
+    var fallbackImage = "https://placehold.co/900x600/e7eef6/1d3557?text=Anh+%26+Doi+song";
+}
+
+<section class="category-hero">
+    <div class="page-shell">
+        <a class="breadcrumb-link" href="/">Trang chủ</a>
+        <h1>@Model.CategoryName</h1>
+        <p>Đang hiển thị các bài viết thuộc chuyên mục này. URL dùng slug "@Model.CategorySlug", truy vấn lọc theo CategoryId = @Model.CategoryId.</p>
+    </div>
+</section>
+
+<section class="page-shell category-page">
+    @if (Model.Posts.Count > 0)
+    {
+        <div class="news-grid">
+            @foreach (var post in Model.Posts)
+            {
+                <partial name="_PostCard" model="@(new PostCardDisplayViewModel(post, fallbackImage, "post-card post-card--compact"))" />
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">Chuyên mục này chưa có bài viết đã xuất bản.</div>
+    }
+</section>

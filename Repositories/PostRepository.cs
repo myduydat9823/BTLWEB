@@ -50,15 +50,53 @@ public class PostRepository : IPostRepository
                 .ToListAsync());
     }
 
-    public Task<List<PostCardViewModel>> GetPostsByCategorySlugAsync(string categorySlug, int take)
+    public Task<List<PostCardViewModel>> GetPostsByCategoryIdAsync(int categoryId)
     {
         return ExecuteListAsync(() =>
             BuildPublishedPostsQuery()
-                .Where(x => x.Category != null && x.Category.Slug == categorySlug)
+                .Where(x => x.CategoryId == categoryId)
+                .OrderByDescending(x => x.PublishedAt)
+                .Select(MapToCard())
+                .ToListAsync());
+    }
+
+    public async Task<List<PostCardViewModel>> GetPostsByCategorySlugAsync(string categorySlug, int take)
+    {
+        var category = await GetCategoryBySlugAsync(categorySlug);
+        if (category is null)
+        {
+            return [];
+        }
+
+        return await ExecuteListAsync(() =>
+            BuildPublishedPostsQuery()
+                .Where(x => x.CategoryId == category.Id)
                 .OrderByDescending(x => x.PublishedAt)
                 .Take(take)
                 .Select(MapToCard())
                 .ToListAsync());
+    }
+
+    public async Task<CategorySummaryViewModel?> GetCategoryBySlugAsync(string categorySlug)
+    {
+        try
+        {
+            return await _dbContext.Categories
+                .AsNoTracking()
+                .Where(x => x.Slug == categorySlug)
+                .Select(x => new CategorySummaryViewModel
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Slug = x.Slug
+                })
+                .FirstOrDefaultAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Khong the tai chuyen muc tu database.");
+            return null;
+        }
     }
 
     public Task<PostCardViewModel?> GetMainFeaturedPostAsync()
@@ -87,6 +125,7 @@ public class PostRepository : IPostRepository
             Slug = x.Slug,
             Summary = x.Summary,
             ThumbnailUrl = x.ThumbnailUrl,
+            CategoryId = x.CategoryId,
             CategoryName = x.Category != null ? x.Category.Name : string.Empty,
             CategorySlug = x.Category != null ? x.Category.Slug : string.Empty,
             PublishedAt = x.PublishedAt,

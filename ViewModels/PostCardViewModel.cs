@@ -6,6 +6,7 @@ public class PostCardViewModel
     public string Slug { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
     public string? ThumbnailUrl { get; set; }
+    public int CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public string CategorySlug { get; set; } = string.Empty;
     public DateTime? PublishedAt { get; set; }
