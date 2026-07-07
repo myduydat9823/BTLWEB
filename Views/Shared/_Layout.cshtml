@@ -1,47 +1,71 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - BTLWEB</title>
+    <title>@ViewData["Title"] - Ảnh & Đời sống</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/BTLWEB.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">BTLWEB</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="brand" href="/" aria-label="Về trang chủ">
+                <span class="brand__mark" aria-hidden="true">
+                    <span class="brand__lens"></span>
+                </span>
+                <span class="brand__text">Ảnh & Đời sống</span>
+            </a>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - BTLWEB - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <nav class="main-nav" aria-label="Menu chính">
+                <a href="/Category/tin-tuc">Tin tức</a>
+                <a href="/Category/anh-noi-bat">Ảnh nổi bật</a>
+                <a href="/Category/cuoc-thi-anh">Cuộc thi ảnh</a>
+                <a href="/Category/trien-lam-anh-online">Triển lãm ảnh online</a>
+                <a href="/Category/anh-va-doi-song">Ảnh và Đời sống</a>
+                <a href="/Category/du-lich-van-hoa-xa-hoi">Du lịch - Văn hoá - Xã hội</a>
+                <a href="/Category/vapa">VAPA</a>
+                <a href="/Category/media">Media</a>
+            </nav>
+
+            <div class="auth-actions">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <span class="auth-actions__hello">Xin chào, @User.Identity.Name</span>
+                    <a class="auth-actions__button" href="/Auth/Logout">Đăng xuất</a>
+                }
+                else
+                {
+                    <a class="auth-actions__button" href="/Auth/Login">Đăng nhập</a>
+                }
+            </div>
+        </div>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <div>
+                <a class="site-footer__brand" href="/">Ảnh & Đời sống</a>
+                <p>Website tin tức điện tử về nhiếp ảnh, nơi lưu giữ những góc nhìn đẹp về con người, văn hoá và đời sống.</p>
+            </div>
+            <div>
+                <h2>Liên hệ</h2>
+                <p>Email: contact@anhdoisong.vn</p>
+                <p>Địa chỉ: Hà Nội, Việt Nam</p>
+            </div>
+            <div>
+                <h2>Bản quyền</h2>
+                <p>&copy; 2026 Ảnh & Đời sống. Nội dung chỉ dùng cho mục đích học tập.</p>
+            </div>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

@@ -1,8 +1,122 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model HomeIndexViewModel
+
+@{
+    ViewData["Title"] = "Trang chủ";
+
+    var fallbackImage = "https://placehold.co/900x600/e7eef6/1d3557?text=Anh+%26+Doi+song";
+    var categorySections = new[]
+    {
+        new SectionView("Tin tức", "tin-tuc", Model.NewsPosts),
+        new SectionView("Ảnh nổi bật", "anh-noi-bat", Model.HighlightPhotoPosts),
+        new SectionView("Cuộc thi ảnh", "cuoc-thi-anh", Model.ContestPosts),
+        new SectionView("Triển lãm ảnh Online", "trien-lam-anh-online", Model.ExhibitionPosts),
+        new SectionView("Ảnh và Đời sống", "anh-va-doi-song", Model.LifePhotoPosts),
+        new SectionView("Du lịch - Văn hoá - Xã hội", "du-lich-van-hoa-xa-hoi", Model.TravelCulturePosts),
+        new SectionView("VAPA", "vapa", Model.VapaPosts),
+        new SectionView("Media", "media", Model.MediaPosts)
+    };
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="home-hero">
+    <div class="home-hero__inner">
+        <div class="home-hero__copy">
+            <span class="home-hero__label">Tạp chí nhiếp ảnh điện tử</span>
+            <h1>Những câu chuyện đời sống qua ống kính Việt</h1>
+            <p>Cập nhật tin tức, ảnh nổi bật, cuộc thi, triển lãm online và các hoạt động nhiếp ảnh trong ngày.</p>
+        </div>
+    </div>
+</section>
+
+<section class="page-shell featured-layout" aria-labelledby="featured-title">
+    <div class="content-column">
+        <div class="section-heading">
+            <h2 id="featured-title">Tin nổi bật</h2>
+            <a href="/Category/tin-tuc">Xem thêm</a>
+        </div>
+
+        @if (Model.MainFeaturedPost is not null)
+        {
+            <article class="lead-story">
+                <a href="/Post/Detail/@Model.MainFeaturedPost.Slug" class="lead-story__image">
+                    <img src="@(string.IsNullOrWhiteSpace(Model.MainFeaturedPost.ThumbnailUrl) ? fallbackImage : Model.MainFeaturedPost.ThumbnailUrl)" alt="@Model.MainFeaturedPost.Title" />
+                </a>
+                <div class="lead-story__body">
+                    <a class="post-category" href="/Category/@Model.MainFeaturedPost.CategorySlug">@Model.MainFeaturedPost.CategoryName</a>
+                    <h3><a href="/Post/Detail/@Model.MainFeaturedPost.Slug">@Model.MainFeaturedPost.Title</a></h3>
+                    <p>@(string.IsNullOrWhiteSpace(Model.MainFeaturedPost.Summary) ? "Bài viết đang được cập nhật nội dung tóm tắt." : Model.MainFeaturedPost.Summary)</p>
+                    <div class="post-meta">
+                        <span>@FormatDate(Model.MainFeaturedPost.PublishedAt)</span>
+                        <span>@Model.MainFeaturedPost.ViewCount lượt xem</span>
+                    </div>
+                </div>
+            </article>
+        }
+        else
+        {
+            <div class="empty-state">Chưa có tin nổi bật. Nội dung sẽ hiển thị tại đây khi database có bài viết đã xuất bản.</div>
+        }
+
+        <div class="featured-grid">
+            @foreach (var post in Model.FeaturedPosts)
+            {
+                <partial name="_PostCard" model="@(new PostCardDisplayViewModel(post, fallbackImage, "post-card"))" />
+            }
+        </div>
+    </div>
+
+    <aside class="sidebar" aria-label="Tin phụ">
+        <div class="sidebar-panel">
+            <div class="sidebar-panel__heading">
+                <h2>Tin mới nhất</h2>
+            </div>
+            <partial name="_PostList" model="@(new PostListDisplayViewModel(Model.LatestPosts, fallbackImage, false))" />
+        </div>
+
+        <div class="sidebar-panel">
+            <div class="sidebar-panel__heading">
+                <h2>Tin xem nhiều</h2>
+            </div>
+            <partial name="_PostList" model="@(new PostListDisplayViewModel(Model.MostViewedPosts, fallbackImage, true))" />
+        </div>
+
+        <a class="small-banner" href="/Category/cuoc-thi-anh">
+            <span>Cuộc thi ảnh</span>
+            <strong>Gửi tác phẩm đẹp nhất của bạn</strong>
+        </a>
+    </aside>
+</section>
+
+<section class="page-shell category-sections" aria-label="Các chuyên mục tin">
+    @foreach (var categorySection in categorySections)
+    {
+        <div class="news-section">
+            <div class="section-heading">
+                <h2>@categorySection.Title</h2>
+                <a href="/Category/@categorySection.Slug">Xem thêm</a>
+            </div>
+
+            @if (categorySection.Posts.Count > 0)
+            {
+                <div class="news-grid">
+                    @foreach (var post in categorySection.Posts.Take(6))
+                    {
+                        <partial name="_PostCard" model="@(new PostCardDisplayViewModel(post, fallbackImage, "post-card post-card--compact"))" />
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state empty-state--small">Chuyên mục này chưa có bài viết.</div>
+            }
+        </div>
+    }
+</section>
+
+@functions {
+    private sealed record SectionView(string Title, string Slug, List<PostCardViewModel> Posts);
+
+    private static string FormatDate(DateTime? value)
+    {
+        return value.HasValue ? value.Value.ToLocalTime().ToString("dd/MM/yyyy") : "Đang cập nhật";
+    }
+}

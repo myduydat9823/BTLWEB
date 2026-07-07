@@ -1,0 +1,31 @@
+@model PostCardDisplayViewModel
+
+@{
+    var post = Model.Post;
+    var imageUrl = string.IsNullOrWhiteSpace(post.ThumbnailUrl) ? Model.FallbackImage : post.ThumbnailUrl;
+}
+
+<article class="@Model.CssClass">
+    <a class="post-card__image" href="/Post/Detail/@post.Slug">
+        <img src="@imageUrl" alt="@post.Title" loading="lazy" />
+    </a>
+    <div class="post-card__body">
+        @if (!string.IsNullOrWhiteSpace(post.CategoryName))
+        {
+            <a class="post-category" href="/Category/@post.CategorySlug">@post.CategoryName</a>
+        }
+        <h3><a href="/Post/Detail/@post.Slug">@post.Title</a></h3>
+        <p>@(string.IsNullOrWhiteSpace(post.Summary) ? "Bài viết đang được cập nhật nội dung tóm tắt." : post.Summary)</p>
+        <div class="post-meta">
+            <span>@FormatDate(post.PublishedAt)</span>
+            <span>@post.ViewCount lượt xem</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private static string FormatDate(DateTime? value)
+    {
+        return value.HasValue ? value.Value.ToLocalTime().ToString("dd/MM/yyyy") : "Đang cập nhật";
+    }
+}

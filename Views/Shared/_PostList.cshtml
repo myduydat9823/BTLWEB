@@ -1,0 +1,38 @@
+@model PostListDisplayViewModel
+
+@if (Model.Posts.Count == 0)
+{
+    <div class="empty-state empty-state--small">Chưa có dữ liệu.</div>
+}
+else
+{
+    <ol class="story-list">
+        @for (var i = 0; i < Model.Posts.Count; i++)
+        {
+            var post = Model.Posts[i];
+            var imageUrl = string.IsNullOrWhiteSpace(post.ThumbnailUrl) ? Model.FallbackImage : post.ThumbnailUrl;
+            var itemClass = Model.ShowRank ? "story-list__item story-list__item--ranked" : "story-list__item";
+
+            <li class="@itemClass">
+                @if (Model.ShowRank)
+                {
+                    <span class="story-list__rank">@(i + 1)</span>
+                }
+                <a class="story-list__thumb" href="/Post/Detail/@post.Slug">
+                    <img src="@imageUrl" alt="@post.Title" loading="lazy" />
+                </a>
+                <div>
+                    <h3><a href="/Post/Detail/@post.Slug">@post.Title</a></h3>
+                    <span>@FormatDate(post.PublishedAt)</span>
+                </div>
+            </li>
+        }
+    </ol>
+}
+
+@functions {
+    private static string FormatDate(DateTime? value)
+    {
+        return value.HasValue ? value.Value.ToLocalTime().ToString("dd/MM/yyyy") : "Đang cập nhật";
+    }
+}
