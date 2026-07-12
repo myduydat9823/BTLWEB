@@ -1,12 +1,18 @@
+using BTLWEB.Common;
 using BTLWEB.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 
 namespace BTLWEB.Data;
 
 public static class AppDbSeeder
 {
-    public static async Task SeedAsync(AppDbContext dbContext)
+    public static async Task SeedAsync(AppDbContext dbContext, IConfiguration? configuration = null)
     {
+        await SeedRolesAsync(dbContext);
+        await SeedAdminAsync(dbContext, configuration);
+
         if (!await dbContext.Categories.AnyAsync())
         {
             var categories = GetCategories();
@@ -24,6 +30,97 @@ public static class AppDbSeeder
 
         var posts = BuildPosts(categoryIds);
         await dbContext.Posts.AddRangeAsync(posts);
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static async Task SeedRolesAsync(AppDbContext dbContext)
+    {
+        var existingRoles = await dbContext.Roles
+            .ToListAsync();
+
+        var roles = new[]
+        {
+            new Role
+            {
+                RoleName = RoleNames.Member,
+                DisplayName = "Thành viên / Hội viên",
+                Description = "Người dùng đã đăng ký tài khoản."
+            },
+            new Role
+            {
+                RoleName = RoleNames.GiamKhao,
+                DisplayName = "Giám khảo",
+                Description = "Người dùng có quyền truy cập khu vực giám khảo."
+            },
+            new Role
+            {
+                RoleName = RoleNames.Admin,
+                DisplayName = "Quản trị viên",
+                Description = "Quản trị tài khoản, phân quyền và nội dung hệ thống."
+            }
+        };
+
+        var missingRoles = roles
+            .Where(x => existingRoles.All(role => role.RoleName != x.RoleName))
+            .ToList();
+
+        foreach (var role in roles)
+        {
+            var existingRole = existingRoles.FirstOrDefault(x => x.RoleName == role.RoleName);
+            if (existingRole is null)
+            {
+                continue;
+            }
+
+            existingRole.DisplayName = role.DisplayName;
+            existingRole.Description = role.Description;
+        }
+
+        if (missingRoles.Count == 0)
+        {
+            await dbContext.SaveChangesAsync();
+            return;
+        }
+
+        await dbContext.Roles.AddRangeAsync(missingRoles);
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static async Task SeedAdminAsync(AppDbContext dbContext, IConfiguration? configuration)
+    {
+        if (configuration is null || await dbContext.Users.AnyAsync(x => x.Role != null && x.Role.RoleName == RoleNames.Admin))
+        {
+            return;
+        }
+
+        var username = configuration["SeedAdmin:Username"];
+        var email = configuration["SeedAdmin:Email"];
+        var fullName = configuration["SeedAdmin:FullName"];
+        var password = configuration["SeedAdmin:Password"];
+
+        if (string.IsNullOrWhiteSpace(username)
+            || string.IsNullOrWhiteSpace(email)
+            || string.IsNullOrWhiteSpace(fullName)
+            || string.IsNullOrWhiteSpace(password))
+        {
+            return;
+        }
+
+        var adminRole = await dbContext.Roles.FirstAsync(x => x.RoleName == RoleNames.Admin);
+        var admin = new User
+        {
+            Username = username.Trim(),
+            NormalizedUsername = username.Trim().ToUpperInvariant(),
+            Email = email.Trim(),
+            NormalizedEmail = email.Trim().ToUpperInvariant(),
+            FullName = fullName.Trim(),
+            RoleId = adminRole.RoleId,
+            IsActive = true,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        admin.PasswordHash = new PasswordHasher<User>().HashPassword(admin, password);
+        await dbContext.Users.AddAsync(admin);
         await dbContext.SaveChangesAsync();
     }
 

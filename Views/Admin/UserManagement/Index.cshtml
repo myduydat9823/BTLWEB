@@ -1,0 +1,101 @@
+@model UserListViewModel
+
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <h1>Quản lý người dùng</h1>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <form method="get" action="/Admin/UserManagement" class="row g-2 mb-4">
+            <div class="col-md-4">
+                <input class="form-control" name="search" value="@Model.Search" placeholder="Tìm theo tên, email..." />
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="role">
+                    <option value="">Tất cả role</option>
+                    @foreach (var role in Model.Roles)
+                    {
+                        <option value="@role.RoleName" selected="@(Model.Role == role.RoleName)">@role.DisplayName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active" selected="@(Model.Status == "active")">Đang hoạt động</option>
+                    <option value="locked" selected="@(Model.Status == "locked")">Đang khóa</option>
+                    <option value="disabled" selected="@(Model.Status == "disabled")">Vô hiệu hóa</option>
+                    <option value="deleted" selected="@(Model.Status == "deleted")">Đã xóa mềm</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" type="submit">Lọc</button>
+            </div>
+        </form>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Người dùng</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users.Items)
+                {
+                    var isLocked = user.LockoutEndUtc is not null && user.LockoutEndUtc > DateTime.UtcNow;
+                    <tr>
+                        <td>
+                            <strong>@user.FullName</strong><br />
+                            <span class="text-muted">@user.Username</span>
+                        </td>
+                        <td>@user.Email</td>
+                        <td>@user.RoleDisplayName</td>
+                        <td>
+                            @if (user.IsDeleted)
+                            {
+                                <span class="status-pill status-pill--danger">Đã xóa</span>
+                            }
+                            else if (isLocked || !user.IsActive)
+                            {
+                                <span class="status-pill status-pill--danger">Đang khóa</span>
+                            }
+                            else
+                            {
+                                <span class="status-pill">Hoạt động</span>
+                            }
+                        </td>
+                        <td>@user.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                        <td><a class="btn btn-sm btn-outline-primary" href="/Admin/UserManagement/@user.UserId">Chi tiết</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (Model.Users.TotalPages > 1)
+        {
+            <div class="account-actions">
+                @for (var pageNumber = 1; pageNumber <= Model.Users.TotalPages; pageNumber++)
+                {
+                    <a class="btn @(pageNumber == Model.Users.Page ? "btn-primary" : "btn-outline-secondary")"
+                       href="/Admin/UserManagement?page=@(pageNumber)&search=@Model.Search&role=@Model.Role&status=@Model.Status">@pageNumber</a>
+                }
+            </div>
+        }
+    </div>
+</section>

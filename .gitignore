@@ -19,6 +19,9 @@ secrets.json
 logs/
 Log/
 
+# User uploaded files
+wwwroot/uploads/
+
 # Test results and coverage
 TestResults/
 coverage/

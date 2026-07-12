@@ -1,0 +1,42 @@
+@model ProfileViewModel
+
+@{
+    ViewData["Title"] = "Hồ sơ";
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <h1>Hồ sơ cá nhân</h1>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+        {
+            <img src="@Model.AvatarUrl" alt="Ảnh đại diện" class="rounded-circle mb-3" style="width: 96px; height: 96px; object-fit: cover;" />
+        }
+
+        <div class="account-grid">
+            <p><strong>Tên đăng nhập:</strong><br />@Model.Username</p>
+            <p><strong>Email:</strong><br />@Model.Email</p>
+            <p><strong>Họ tên:</strong><br />@Model.FullName</p>
+            <p><strong>Role:</strong><br />@Model.RoleDisplayName (@Model.RoleName)</p>
+            <p><strong>Số điện thoại:</strong><br />@(Model.Phone ?? "Chưa cập nhật")</p>
+            <p><strong>Ngày sinh:</strong><br />@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")</p>
+            <p><strong>Địa chỉ:</strong><br />@(Model.Address ?? "Chưa cập nhật")</p>
+            <p><strong>Đăng nhập gần nhất:</strong><br />@(Model.LastLoginAtUtc?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa có")</p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Bio))
+        {
+            <p><strong>Giới thiệu:</strong><br />@Model.Bio</p>
+        }
+
+        <div class="account-actions">
+            <a asp-action="Edit" class="btn btn-primary">Sửa hồ sơ</a>
+            <a asp-action="ChangePassword" class="btn btn-outline-secondary">Đổi mật khẩu</a>
+        </div>
+    </div>
+</section>

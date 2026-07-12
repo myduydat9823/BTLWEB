@@ -1,0 +1,125 @@
+@model UserDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết người dùng";
+    var isLocked = Model.LockoutEndUtc is not null && Model.LockoutEndUtc > DateTime.UtcNow;
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <h1>@Model.FullName</h1>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <div class="account-grid">
+            <p><strong>Username:</strong><br />@Model.Username</p>
+            <p><strong>Email:</strong><br />@Model.Email</p>
+            <p><strong>Role:</strong><br />@Model.RoleDisplayName (@Model.RoleName)</p>
+            <p><strong>Trang thai:</strong><br />
+                @if (Model.IsDeleted)
+                {
+                <span class="status-pill status-pill--danger">Đã xóa mềm</span>
+                }
+                else if (isLocked || !Model.IsActive)
+                {
+                    <span class="status-pill status-pill--danger">Đang khóa</span>
+                }
+                else
+                {
+                    <span class="status-pill">Hoạt động</span>
+                }
+            </p>
+            <p><strong>Số điện thoại:</strong><br />@(Model.Phone ?? "Chưa cập nhật")</p>
+            <p><strong>Ngày sinh:</strong><br />@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")</p>
+            <p><strong>Địa chỉ:</strong><br />@(Model.Address ?? "Chưa cập nhật")</p>
+            <p><strong>Đăng nhập gần nhất:</strong><br />@(Model.LastLoginAtUtc?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa có")</p>
+        </div>
+
+        <div class="account-actions">
+            <a class="btn btn-primary" href="/Admin/UserManagement/@Model.UserId/ChangeRole">Đổi role</a>
+            @if (Model.IsDeleted)
+            {
+                <form method="post" action="/Admin/UserManagement/@Model.UserId/Restore">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-success" type="submit">Khôi phục</button>
+                </form>
+            }
+            else if (isLocked || !Model.IsActive)
+            {
+                <form method="post" action="/Admin/UserManagement/@Model.UserId/Unlock">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-success" type="submit">Mở khóa</button>
+                </form>
+            }
+            else
+            {
+                <form method="post" action="/Admin/UserManagement/@Model.UserId/Lock">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-warning" type="submit">Khóa</button>
+                </form>
+                <form method="post" action="/Admin/UserManagement/@Model.UserId/Delete">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-danger" type="submit">Xóa mềm</button>
+                </form>
+            }
+            <a class="btn btn-outline-secondary" href="/Admin/UserManagement">Quay lại</a>
+        </div>
+
+        <hr />
+        <h2 class="h4">Lịch sử đăng nhập gần đây</h2>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Kết quả</th>
+                    <th>Ly do</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.LoginLogs)
+                {
+                    <tr>
+                        <td>@log.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(log.IsSuccess ? "Thành công" : "Thất bại")</td>
+                        <td>@(log.FailureReason ?? "")</td>
+                        <td>@(log.IpAddress ?? "")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <hr />
+        <h2 class="h4">Lịch sử đổi role</h2>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Tu role</th>
+                    <th>Sang role</th>
+                    <th>Người đổi</th>
+                    <th>Ghi chú</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.RoleHistories)
+                {
+                    <tr>
+                        <td>@item.ChangedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(item.OldRoleName ?? "")</td>
+                        <td>@item.NewRoleName</td>
+                        <td>@(item.ChangedByUsername ?? "")</td>
+                        <td>@(item.Note ?? "")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
