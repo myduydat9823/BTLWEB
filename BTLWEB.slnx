@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BTLWEB.csproj" />
+  <Project Path="BTLWEB.Tests/BTLWEB.Tests.csproj" />
+</Solution>
