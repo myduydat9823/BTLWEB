@@ -435,6 +435,11 @@ public class ArticleServiceTests
 
         public Task<bool> CategoryExistsAsync(int categoryId) => Task.FromResult(CategoryExists);
 
+        public Task<List<Post>> GetPostsByAuthorIdAsync(int authorId)
+        {
+            return Task.FromResult(Posts.Where(x => x.AuthorId == authorId && !x.IsDeleted).ToList());
+        }
+
         public Task<List<ArticleCategoryOptionViewModel>> GetCategoryOptionsAsync()
         {
             return Task.FromResult(new List<ArticleCategoryOptionViewModel>

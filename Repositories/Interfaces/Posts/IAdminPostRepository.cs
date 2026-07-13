@@ -15,6 +15,7 @@ public interface IAdminPostRepository
     Task<PagedResult<Post>> GetDeletedArticlesAsync(ArticleFilterViewModel filter);
     Task<List<Post>> GetPublishedArticlesAsync(int take, int? categoryId = null);
     Task<bool> CategoryExistsAsync(int categoryId);
+    Task<List<Post>> GetPostsByAuthorIdAsync(int authorId);
     Task<List<ArticleCategoryOptionViewModel>> GetCategoryOptionsAsync();
     Task AddLogAsync(ArticleAdminLog log);
     Task<List<ArticleAdminLog>> GetLogsByPostIdAsync(int postId, int take = 30);

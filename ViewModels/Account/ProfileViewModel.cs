@@ -15,4 +15,5 @@ public class ProfileViewModel
     public DateTime? DateOfBirth { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? LastLoginAtUtc { get; set; }
+    public IReadOnlyList<ArticleListItemViewModel> MyArticles { get; set; } = [];
 }

@@ -102,6 +102,16 @@ public class AdminPostRepository : IAdminPostRepository
         return _dbContext.Categories.AsNoTracking().AnyAsync(x => x.Id == categoryId);
     }
 
+    public Task<List<Post>> GetPostsByAuthorIdAsync(int authorId)
+    {
+        return _dbContext.Posts
+            .AsNoTracking()
+            .Include(x => x.Category)
+            .Where(x => x.AuthorId == authorId && !x.IsDeleted)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ToListAsync();
+    }
+
     public Task<List<ArticleCategoryOptionViewModel>> GetCategoryOptionsAsync()
     {
         return _dbContext.Categories

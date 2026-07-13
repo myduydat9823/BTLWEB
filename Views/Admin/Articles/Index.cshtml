@@ -157,9 +157,9 @@
     {
         return status switch
         {
-            PostStatus.Published => "Xuất bản",
-            PostStatus.Hidden => "Ẩn",
-            PostStatus.Archived => "Lưu trữ",
+            PostStatus.Pending => "Chờ duyệt",
+            PostStatus.Approved => "Đã duyệt",
+            PostStatus.Rejected => "Từ chối",
             _ => "Nháp"
         };
     }
@@ -168,10 +168,10 @@
     {
         return status switch
         {
-            PostStatus.Published => string.Empty,
-            PostStatus.Hidden => "status-pill--danger",
-            PostStatus.Archived => "status-pill--muted",
-            _ => "status-pill--warning"
+            PostStatus.Pending => "status-pill--warning",
+            PostStatus.Approved => string.Empty,
+            PostStatus.Rejected => "status-pill--danger",
+            _ => "status-pill--muted"
         };
     }
 }
