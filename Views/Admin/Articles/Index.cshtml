@@ -1,0 +1,162 @@
+@model ArticleListViewModel
+
+@{
+    ViewData["Title"] = "Quản lý bài viết";
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h1>Quản lý bài viết</h1>
+                <p class="text-muted mb-0">Theo dõi, tìm kiếm và lọc các bài viết trong hệ thống.</p>
+            </div>
+            <a class="btn btn-primary" href="/Admin/Articles/Create">Tạo bài viết</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <form method="get" action="/Admin/Articles" class="row g-2 mb-4">
+            <div class="col-lg-4 col-md-6">
+                <input class="form-control" name="Search" value="@Model.Filter.Search" placeholder="Tìm theo tiêu đề..." />
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <select class="form-select" name="CategoryId">
+                    <option value="">Tất cả danh mục</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category.CategoryId" selected="@(Model.Filter.CategoryId == category.CategoryId)">@category.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <select class="form-select" name="Status">
+                    <option value="">Tất cả trạng thái</option>
+                    @foreach (var status in Model.Statuses)
+                    {
+                        <option value="@status.Value" selected="@(Model.Filter.Status == status.Value)">@status.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <select class="form-select" name="IsFeatured">
+                    <option value="">Tất cả bài viết</option>
+                    <option value="true" selected="@(Model.Filter.IsFeatured == true)">Bài nổi bật</option>
+                    <option value="false" selected="@(Model.Filter.IsFeatured == false)">Không nổi bật</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <button class="btn btn-primary w-100" type="submit">Lọc</button>
+            </div>
+        </form>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <strong>@Model.Articles.TotalItems bài viết</strong>
+            <a class="btn btn-sm btn-outline-secondary" href="/Admin/Articles">Xóa bộ lọc</a>
+        </div>
+
+        @if (!Model.Articles.Items.Any())
+        {
+            <div class="empty-state">Chưa có bài viết phù hợp với bộ lọc hiện tại.</div>
+        }
+        else
+        {
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Bài viết</th>
+                        <th>Danh mục</th>
+                        <th>Tác giả</th>
+                        <th>Trạng thái</th>
+                        <th>Lượt xem</th>
+                        <th>Ngày tạo</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var article in Model.Articles.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div class="admin-article-title">
+                                    @if (!string.IsNullOrWhiteSpace(article.ThumbnailUrl))
+                                    {
+                                        <img class="admin-article-thumb" src="@article.ThumbnailUrl" alt="@article.Title" />
+                                    }
+                                    <div>
+                                        <strong>@article.Title</strong>
+                                        @if (article.IsFeatured)
+                                        {
+                                            <span class="status-pill status-pill--info ms-1">Nổi bật</span>
+                                        }
+                                        <br />
+                                        <span class="text-muted">@article.Slug</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@article.CategoryName</td>
+                            <td>@(article.AuthorName ?? "Chưa rõ")</td>
+                            <td>
+                                <span class="status-pill @GetStatusClass(article.Status)">@GetStatusText(article.Status)</span>
+                            </td>
+                            <td>@article.ViewCount</td>
+                            <td>@article.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary" href="/Post/Detail/@article.Slug" target="_blank" rel="noopener">Xem</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (Model.Articles.TotalPages > 1)
+        {
+            <div class="account-actions">
+                @for (var pageNumber = 1; pageNumber <= Model.Articles.TotalPages; pageNumber++)
+                {
+                    <a class="btn @(pageNumber == Model.Articles.Page ? "btn-primary" : "btn-outline-secondary")"
+                       asp-controller="Articles"
+                       asp-action="Index"
+                       asp-route-page="@pageNumber"
+                       asp-route-pageSize="@Model.Filter.PageSize"
+                       asp-route-search="@Model.Filter.Search"
+                       asp-route-categoryId="@Model.Filter.CategoryId"
+                       asp-route-status="@Model.Filter.Status"
+                       asp-route-isFeatured="@Model.Filter.IsFeatured">@pageNumber</a>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@functions {
+    private static string GetStatusText(string status)
+    {
+        return status switch
+        {
+            PostStatus.Published => "Xuất bản",
+            PostStatus.Hidden => "Ẩn",
+            PostStatus.Archived => "Lưu trữ",
+            _ => "Nháp"
+        };
+    }
+
+    private static string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            PostStatus.Published => string.Empty,
+            PostStatus.Hidden => "status-pill--danger",
+            PostStatus.Archived => "status-pill--muted",
+            _ => "status-pill--warning"
+        };
+    }
+}

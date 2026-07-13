@@ -20,6 +20,13 @@ public class ArticlesController : Controller
         _currentUserService = currentUserService;
     }
 
+    [HttpGet("")]
+    public async Task<IActionResult> Index([FromQuery] ArticleFilterViewModel filter)
+    {
+        var model = await _articleService.GetAdminListAsync(filter);
+        return View("~/Views/Admin/Articles/Index.cshtml", model);
+    }
+
     [HttpGet("Create")]
     public async Task<IActionResult> Create()
     {
@@ -57,6 +64,6 @@ public class ArticlesController : Controller
         }
 
         TempData["SuccessMessage"] = result.Message;
-        return RedirectToAction(nameof(Create));
+        return RedirectToAction(nameof(Index));
     }
 }

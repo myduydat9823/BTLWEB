@@ -23,6 +23,59 @@ public class ArticleServiceTests
     }
 
     [Fact]
+    public async Task GetAdminListAsync_ShouldMapPagedArticlesAndNormalizeFilters()
+    {
+        var repository = new FakeAdminPostRepository
+        {
+            AdminArticlesResult = new PagedResult<Post>
+            {
+                Items =
+                [
+                    new Post
+                    {
+                        Id = 9,
+                        Title = "Triển lãm ảnh",
+                        Slug = "trien-lam-anh",
+                        ThumbnailUrl = "/uploads/articles/test.jpg",
+                        Category = new Category { Name = "Tin tức" },
+                        Author = new User { FullName = "Quản trị viên" },
+                        Status = PostStatus.Published,
+                        IsFeatured = true,
+                        CreatedAtUtc = new DateTime(2026, 7, 13, 0, 0, 0, DateTimeKind.Utc),
+                        PublishedAt = new DateTime(2026, 7, 14, 0, 0, 0, DateTimeKind.Utc),
+                        ViewCount = 25
+                    }
+                ],
+                Page = 2,
+                PageSize = 5,
+                TotalItems = 11
+            }
+        };
+        var service = CreateService(repository);
+
+        var model = await service.GetAdminListAsync(new ArticleFilterViewModel
+        {
+            Search = "  Triển lãm  ",
+            CategoryId = 1,
+            Status = PostStatus.Published,
+            IsFeatured = true,
+            Page = 2,
+            PageSize = 5
+        });
+
+        Assert.Equal("Triển lãm", repository.LastFilter?.Search);
+        Assert.Equal(2, model.Articles.Page);
+        Assert.Equal(11, model.Articles.TotalItems);
+        Assert.Equal(PostStatus.All.Length, model.Statuses.Count);
+
+        var article = Assert.Single(model.Articles.Items);
+        Assert.Equal(9, article.Id);
+        Assert.Equal("Tin tức", article.CategoryName);
+        Assert.Equal("Quản trị viên", article.AuthorName);
+        Assert.True(article.IsFeatured);
+    }
+
+    [Fact]
     public async Task CreateAsync_ShouldCreateDraftArticleWithServerSideFields()
     {
         var repository = new FakeAdminPostRepository();
@@ -175,6 +228,8 @@ public class ArticleServiceTests
         public HashSet<string> ExistingSlugs { get; init; } = [];
         public bool CategoryExists { get; init; } = true;
         public bool ThrowOnAdd { get; init; }
+        public ArticleFilterViewModel? LastFilter { get; private set; }
+        public PagedResult<Post> AdminArticlesResult { get; init; } = new();
 
         public Task<Post?> GetByIdAsync(int id) => Task.FromResult<Post?>(Posts.FirstOrDefault(x => x.Id == id));
         public Task<Post?> GetBySlugAsync(string slug) => Task.FromResult<Post?>(Posts.FirstOrDefault(x => x.Slug == slug));
@@ -196,7 +251,8 @@ public class ArticleServiceTests
 
         public Task<PagedResult<Post>> GetAdminArticlesAsync(ArticleFilterViewModel filter)
         {
-            return Task.FromResult(new PagedResult<Post>());
+            LastFilter = filter;
+            return Task.FromResult(AdminArticlesResult);
         }
 
         public Task<List<Post>> GetPublishedArticlesAsync(int take, int? categoryId = null)

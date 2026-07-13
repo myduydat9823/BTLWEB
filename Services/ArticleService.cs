@@ -27,6 +27,31 @@ public class ArticleService : IArticleService
         _logger = logger;
     }
 
+    public async Task<ArticleListViewModel> GetAdminListAsync(ArticleFilterViewModel filter)
+    {
+        filter.Page = Math.Max(filter.Page, 1);
+        filter.PageSize = Math.Clamp(filter.PageSize, 1, 50);
+        filter.Search = string.IsNullOrWhiteSpace(filter.Search) ? null : filter.Search.Trim();
+        filter.Status = PostStatus.All.Contains(filter.Status) ? filter.Status : null;
+        filter.CategoryId = filter.CategoryId is > 0 ? filter.CategoryId : null;
+
+        var result = await _postRepository.GetAdminArticlesAsync(filter);
+
+        return new ArticleListViewModel
+        {
+            Filter = filter,
+            Articles = new PagedResult<ArticleListItemViewModel>
+            {
+                Items = result.Items.Select(MapToListItem).ToList(),
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalItems = result.TotalItems
+            },
+            Categories = await _postRepository.GetCategoryOptionsAsync(),
+            Statuses = BuildStatusOptions()
+        };
+    }
+
     public async Task<ArticleCreateViewModel> BuildCreateViewModelAsync(ArticleCreateViewModel? model = null)
     {
         model ??= new ArticleCreateViewModel();
@@ -123,7 +148,30 @@ public class ArticleService : IArticleService
     private async Task PopulateFormOptionsAsync(ArticleCreateViewModel model)
     {
         model.Categories = await _postRepository.GetCategoryOptionsAsync();
-        model.Statuses =
+        model.Statuses = BuildStatusOptions();
+    }
+
+    private static ArticleListItemViewModel MapToListItem(Post post)
+    {
+        return new ArticleListItemViewModel
+        {
+            Id = post.Id,
+            Title = post.Title,
+            Slug = post.Slug,
+            ThumbnailUrl = post.ThumbnailUrl,
+            CategoryName = post.Category?.Name ?? "Chưa phân loại",
+            AuthorName = post.Author?.FullName ?? post.Author?.Username,
+            Status = post.Status,
+            IsFeatured = post.IsFeatured,
+            CreatedAtUtc = post.CreatedAtUtc,
+            PublishedAt = post.PublishedAt,
+            ViewCount = post.ViewCount
+        };
+    }
+
+    private static IReadOnlyList<ArticleStatusOptionViewModel> BuildStatusOptions()
+    {
+        return
         [
             new ArticleStatusOptionViewModel { Value = PostStatus.Draft, Text = "Nháp" },
             new ArticleStatusOptionViewModel { Value = PostStatus.Published, Text = "Xuất bản" },

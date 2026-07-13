@@ -91,6 +91,37 @@
   color: #b3261e;
 }
 
+.status-pill--warning {
+  background: #fff8e6;
+  color: #936300;
+}
+
+.status-pill--muted {
+  background: #f1f4f7;
+  color: #52616f;
+}
+
+.status-pill--info {
+  background: #e8f2ff;
+  color: #005baa;
+}
+
+.admin-article-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 260px;
+}
+
+.admin-article-thumb {
+  width: 62px;
+  height: 46px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--soft);
+}
+
 @media (max-width: 760px) {
   .account-grid {
     grid-template-columns: 1fr;
