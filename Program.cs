@@ -33,6 +33,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
+builder.Services.AddScoped<IAdminPostRepository, AdminPostRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
