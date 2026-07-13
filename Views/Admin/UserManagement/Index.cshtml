@@ -20,7 +20,11 @@
             <div class="alert alert-danger">@errorMessage</div>
         }
 
-        <form method="get" action="/Admin/UserManagement" class="row g-2 mb-4">
+        <form method="get"
+              action="/Admin/UserManagement"
+              class="row g-2 mb-4"
+              data-ajax-user-filter
+              data-ajax-target="#user-list-content">
             <div class="col-md-4">
                 <input class="form-control" name="search" value="@Model.Search" placeholder="Tìm theo tên, email..." />
             </div>
@@ -47,58 +51,10 @@
             </div>
         </form>
 
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Người dùng</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Trạng thái</th>
-                    <th>Ngày tạo</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in Model.Users.Items)
-                {
-                    var isLocked = user.LockoutEndUtc is not null && user.LockoutEndUtc > DateTime.UtcNow;
-                    <tr>
-                        <td>
-                            <strong>@user.FullName</strong><br />
-                            <span class="text-muted">@user.Username</span>
-                        </td>
-                        <td>@user.Email</td>
-                        <td>@user.RoleDisplayName</td>
-                        <td>
-                            @if (user.IsDeleted)
-                            {
-                                <span class="status-pill status-pill--danger">Đã xóa</span>
-                            }
-                            else if (isLocked || !user.IsActive)
-                            {
-                                <span class="status-pill status-pill--danger">Đang khóa</span>
-                            }
-                            else
-                            {
-                                <span class="status-pill">Hoạt động</span>
-                            }
-                        </td>
-                        <td>@user.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</td>
-                        <td><a class="btn btn-sm btn-outline-primary" href="/Admin/UserManagement/@user.UserId">Chi tiết</a></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-        @if (Model.Users.TotalPages > 1)
-        {
-            <div class="account-actions">
-                @for (var pageNumber = 1; pageNumber <= Model.Users.TotalPages; pageNumber++)
-                {
-                    <a class="btn @(pageNumber == Model.Users.Page ? "btn-primary" : "btn-outline-secondary")"
-                       href="/Admin/UserManagement?page=@(pageNumber)&search=@Model.Search&role=@Model.Role&status=@Model.Status">@pageNumber</a>
-                }
-            </div>
-        }
+        <partial name="~/Views/Admin/UserManagement/_UserListTable.cshtml" model="Model" />
     </div>
 </section>
+
+@section Scripts {
+    <script src="~/js/admin-user-management.js" asp-append-version="true"></script>
+}

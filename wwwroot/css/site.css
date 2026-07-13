@@ -159,6 +159,12 @@
   min-width: 112px;
 }
 
+.ajax-loading {
+  position: relative;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .admin-preview {
   padding: 20px;
   border: 1px solid var(--line);

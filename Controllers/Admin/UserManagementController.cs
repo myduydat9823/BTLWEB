@@ -23,6 +23,11 @@ public class UserManagementController : Controller
     public async Task<IActionResult> Index(string? search, string? role, string? status, int page = 1)
     {
         var model = await _userAccountService.GetUserListAsync(search, role, status, page);
+        if (IsAjaxRequest())
+        {
+            return PartialView("~/Views/Admin/UserManagement/_UserListTable.cshtml", model);
+        }
+
         return View("~/Views/Admin/UserManagement/Index.cshtml", model);
     }
 
@@ -128,5 +133,10 @@ public class UserManagementController : Controller
         {
             TempData["ErrorMessage"] = result.Message;
         }
+    }
+
+    private bool IsAjaxRequest()
+    {
+        return string.Equals(Request.Headers.XRequestedWith, "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
     }
 }

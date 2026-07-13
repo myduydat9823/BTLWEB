@@ -1,0 +1,65 @@
+@model UserListViewModel
+
+<div id="user-list-content" data-ajax-user-list>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Người dùng</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.Users.Items)
+            {
+                var isLocked = user.LockoutEndUtc is not null && user.LockoutEndUtc > DateTime.UtcNow;
+                <tr>
+                    <td>
+                        <strong>@user.FullName</strong><br />
+                        <span class="text-muted">@user.Username</span>
+                    </td>
+                    <td>@user.Email</td>
+                    <td>@user.RoleDisplayName</td>
+                    <td>
+                        @if (user.IsDeleted)
+                        {
+                            <span class="status-pill status-pill--danger">Đã xóa</span>
+                        }
+                        else if (isLocked || !user.IsActive)
+                        {
+                            <span class="status-pill status-pill--danger">Đang khóa</span>
+                        }
+                        else
+                        {
+                            <span class="status-pill">Hoạt động</span>
+                        }
+                    </td>
+                    <td>@user.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-primary"
+                           asp-action="Details"
+                           asp-route-id="@user.UserId">Chi tiết</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Model.Users.TotalPages > 1)
+    {
+        <div class="account-actions" data-ajax-pagination>
+            @for (var pageNumber = 1; pageNumber <= Model.Users.TotalPages; pageNumber++)
+            {
+                <a class="btn @(pageNumber == Model.Users.Page ? "btn-primary" : "btn-outline-secondary")"
+                   asp-action="Index"
+                   asp-route-page="@pageNumber"
+                   asp-route-search="@Model.Search"
+                   asp-route-role="@Model.Role"
+                   asp-route-status="@Model.Status">@pageNumber</a>
+            }
+        </div>
+    }
+</div>
