@@ -7,11 +7,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="BTLWEB.Tests\**\*.cs" />
+    <Content Remove="BTLWEB.Tests\**\*" />
+    <EmbeddedResource Remove="BTLWEB.Tests\**\*" />
+    <None Remove="BTLWEB.Tests\**\*" />
   </ItemGroup>
 
 </Project>

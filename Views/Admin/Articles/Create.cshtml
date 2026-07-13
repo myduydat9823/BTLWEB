@@ -1,0 +1,100 @@
+@model ArticleCreateViewModel
+
+@{
+    ViewData["Title"] = "Tạo bài viết";
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h1>Tạo bài viết</h1>
+                <p class="text-muted mb-0">Tạo bài nháp hoặc xuất bản bài viết mới cho trang tin.</p>
+            </div>
+            <a class="btn btn-outline-secondary" href="/Admin/UserManagement">Quay lại quản trị</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+
+        <form action="/Admin/Articles/Create" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="account-grid">
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label"></label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="CategoryId" class="form-label"></label>
+                    <select asp-for="CategoryId" class="form-select">
+                        <option value="">Chọn danh mục</option>
+                        @foreach (var category in Model.Categories)
+                        {
+                            <option value="@category.CategoryId">@category.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Thumbnail" class="form-label"></label>
+                    <input asp-for="Thumbnail" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp" />
+                    <span asp-validation-for="Thumbnail" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PublishedAt" class="form-label"></label>
+                    <input asp-for="PublishedAt" class="form-control" />
+                    <span asp-validation-for="PublishedAt" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Summary" class="form-label"></label>
+                <textarea asp-for="Summary" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Summary" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Content" class="form-label"></label>
+                <textarea asp-for="Content" class="form-control" rows="12"></textarea>
+                <span asp-validation-for="Content" class="text-danger"></span>
+            </div>
+
+            <div class="account-grid">
+                <div class="mb-3">
+                    <label asp-for="MetaTitle" class="form-label"></label>
+                    <input asp-for="MetaTitle" class="form-control" />
+                    <span asp-validation-for="MetaTitle" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="MetaDescription" class="form-label"></label>
+                    <input asp-for="MetaDescription" class="form-control" />
+                    <span asp-validation-for="MetaDescription" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="IsFeatured" class="form-check-input" />
+                <label asp-for="IsFeatured" class="form-check-label"></label>
+                <span asp-validation-for="IsFeatured" class="text-danger d-block"></span>
+            </div>
+
+            <div class="account-actions">
+                <button class="btn btn-outline-primary" type="submit" name="command" value="draft">Lưu nháp</button>
+                <button class="btn btn-primary" type="submit" name="command" value="publish">Xuất bản</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
