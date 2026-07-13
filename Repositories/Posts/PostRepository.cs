@@ -111,10 +111,15 @@ public class PostRepository : IPostRepository
 
     private IQueryable<Post> BuildPublishedPostsQuery()
     {
+        var now = DateTime.UtcNow;
+
         return _dbContext.Posts
             .AsNoTracking()
             .Include(x => x.Category)
-            .Where(x => x.Status == PostStatus.Published);
+            .Where(x => x.Status == PostStatus.Published
+                && !x.IsDeleted
+                && x.PublishedAt != null
+                && x.PublishedAt <= now);
     }
 
     private static System.Linq.Expressions.Expression<Func<Post, PostCardViewModel>> MapToCard()

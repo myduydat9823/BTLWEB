@@ -302,6 +302,8 @@ public static class AppDbSeeder
         int viewCount,
         bool isFeatured)
     {
+        var now = DateTime.UtcNow;
+
         return new Post
         {
             CategoryId = categoryId,
@@ -311,9 +313,14 @@ public static class AppDbSeeder
             ThumbnailUrl = thumbnailUrl,
             Content = $"{title}\n\n{summary}",
             PublishedAt = publishedAt,
+            CreatedAtUtc = publishedAt,
+            UpdatedAtUtc = now,
             ViewCount = viewCount,
             IsFeatured = isFeatured,
-            Status = PostStatus.Published
+            Status = PostStatus.Published,
+            IsDeleted = false,
+            MetaTitle = title,
+            MetaDescription = summary
         };
     }
 }

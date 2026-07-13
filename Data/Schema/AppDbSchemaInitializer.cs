@@ -4,7 +4,12 @@ namespace BTLWEB.Data;
 
 public static class AppDbSchemaInitializer
 {
-    public static async Task EnsureAuthSchemaAsync(AppDbContext dbContext)
+    public static Task EnsureAuthSchemaAsync(AppDbContext dbContext)
+    {
+        return EnsureSchemaAsync(dbContext);
+    }
+
+    public static async Task EnsureSchemaAsync(AppDbContext dbContext)
     {
         foreach (var sql in GetBatches())
         {
@@ -124,6 +129,54 @@ public static class AppDbSchemaInitializer
 
                 CREATE UNIQUE INDEX IX_PasswordResetTokens_TokenHash ON dbo.PasswordResetTokens(TokenHash);
                 CREATE INDEX IX_PasswordResetTokens_UserId_ExpiresAtUtc ON dbo.PasswordResetTokens(UserId, ExpiresAtUtc);
+            END
+            """,
+            """
+            IF OBJECT_ID(N'dbo.Posts', N'U') IS NOT NULL
+            BEGIN
+                IF COL_LENGTH(N'dbo.Posts', N'AuthorId') IS NULL
+                    ALTER TABLE dbo.Posts ADD AuthorId INT NULL;
+
+                IF COL_LENGTH(N'dbo.Posts', N'CreatedAtUtc') IS NULL
+                    ALTER TABLE dbo.Posts ADD CreatedAtUtc DATETIME2 NOT NULL CONSTRAINT DF_Posts_CreatedAtUtc DEFAULT(SYSUTCDATETIME()) WITH VALUES;
+
+                IF COL_LENGTH(N'dbo.Posts', N'UpdatedAtUtc') IS NULL
+                    ALTER TABLE dbo.Posts ADD UpdatedAtUtc DATETIME2 NULL;
+
+                IF COL_LENGTH(N'dbo.Posts', N'MetaTitle') IS NULL
+                    ALTER TABLE dbo.Posts ADD MetaTitle NVARCHAR(250) NULL;
+
+                IF COL_LENGTH(N'dbo.Posts', N'MetaDescription') IS NULL
+                    ALTER TABLE dbo.Posts ADD MetaDescription NVARCHAR(500) NULL;
+
+                IF COL_LENGTH(N'dbo.Posts', N'IsDeleted') IS NULL
+                    ALTER TABLE dbo.Posts ADD IsDeleted BIT NOT NULL CONSTRAINT DF_Posts_IsDeleted DEFAULT(0) WITH VALUES;
+
+                IF COL_LENGTH(N'dbo.Posts', N'DeletedAtUtc') IS NULL
+                    ALTER TABLE dbo.Posts ADD DeletedAtUtc DATETIME2 NULL;
+
+                IF COL_LENGTH(N'dbo.Posts', N'DeletedByUserId') IS NULL
+                    ALTER TABLE dbo.Posts ADD DeletedByUserId INT NULL;
+            END
+            """,
+            """
+            IF OBJECT_ID(N'dbo.Posts', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.Users', N'U') IS NOT NULL
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Posts_Users_AuthorId')
+                    ALTER TABLE dbo.Posts ADD CONSTRAINT FK_Posts_Users_AuthorId FOREIGN KEY (AuthorId) REFERENCES dbo.Users(UserId);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Posts_Users_DeletedByUserId')
+                    ALTER TABLE dbo.Posts ADD CONSTRAINT FK_Posts_Users_DeletedByUserId FOREIGN KEY (DeletedByUserId) REFERENCES dbo.Users(UserId);
+            END
+            """,
+            """
+            IF OBJECT_ID(N'dbo.Posts', N'U') IS NOT NULL
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Posts_Status_IsDeleted_PublishedAt' AND object_id = OBJECT_ID(N'dbo.Posts'))
+                    CREATE INDEX IX_Posts_Status_IsDeleted_PublishedAt ON dbo.Posts(Status, IsDeleted, PublishedAt);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Posts_AuthorId' AND object_id = OBJECT_ID(N'dbo.Posts'))
+                    CREATE INDEX IX_Posts_AuthorId ON dbo.Posts(AuthorId);
             END
             """
         ];
