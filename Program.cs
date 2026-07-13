@@ -43,6 +43,7 @@ builder.Services.AddScoped<IDataEncryptionService, DataEncryptionService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ISlugService, SlugService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddScoped<IHtmlSanitizerService, HtmlSanitizerService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 
