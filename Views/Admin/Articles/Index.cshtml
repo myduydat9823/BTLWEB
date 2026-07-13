@@ -109,7 +109,10 @@
                             <td>@article.ViewCount</td>
                             <td>@article.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</td>
                             <td>
-                                <a class="btn btn-sm btn-outline-primary" href="/Post/Detail/@article.Slug" target="_blank" rel="noopener">Xem</a>
+                                <div class="account-actions m-0">
+                                    <a class="btn btn-sm btn-outline-primary" href="/Admin/Articles/Edit/@article.Id">Sửa</a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="/Post/Detail/@article.Slug" target="_blank" rel="noopener">Xem</a>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -123,14 +126,7 @@
                 @for (var pageNumber = 1; pageNumber <= Model.Articles.TotalPages; pageNumber++)
                 {
                     <a class="btn @(pageNumber == Model.Articles.Page ? "btn-primary" : "btn-outline-secondary")"
-                       asp-controller="Articles"
-                       asp-action="Index"
-                       asp-route-page="@pageNumber"
-                       asp-route-pageSize="@Model.Filter.PageSize"
-                       asp-route-search="@Model.Filter.Search"
-                       asp-route-categoryId="@Model.Filter.CategoryId"
-                       asp-route-status="@Model.Filter.Status"
-                       asp-route-isFeatured="@Model.Filter.IsFeatured">@pageNumber</a>
+                       href="/Admin/Articles?page=@pageNumber&pageSize=@Model.Filter.PageSize&search=@Model.Filter.Search&categoryId=@Model.Filter.CategoryId&status=@Model.Filter.Status&isFeatured=@Model.Filter.IsFeatured">@pageNumber</a>
                 }
             </div>
         }

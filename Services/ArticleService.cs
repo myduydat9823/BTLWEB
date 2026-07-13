@@ -59,6 +59,40 @@ public class ArticleService : IArticleService
         return model;
     }
 
+    public async Task<ArticleEditViewModel?> BuildEditViewModelAsync(int id)
+    {
+        var post = await _postRepository.GetByIdAsync(id);
+        if (post is null)
+        {
+            return null;
+        }
+
+        var model = new ArticleEditViewModel
+        {
+            Id = post.Id,
+            Title = post.Title,
+            Slug = post.Slug,
+            Summary = post.Summary,
+            Content = post.Content ?? string.Empty,
+            CategoryId = post.CategoryId,
+            ExistingThumbnailUrl = post.ThumbnailUrl,
+            IsFeatured = post.IsFeatured,
+            Status = post.Status,
+            PublishedAt = post.PublishedAt,
+            MetaTitle = post.MetaTitle,
+            MetaDescription = post.MetaDescription
+        };
+
+        await PopulateFormOptionsAsync(model);
+        return model;
+    }
+
+    public async Task<ArticleEditViewModel> BuildEditViewModelAsync(ArticleEditViewModel model)
+    {
+        await PopulateFormOptionsAsync(model);
+        return model;
+    }
+
     public async Task<OperationResult<int>> CreateAsync(ArticleCreateViewModel model, int authorId, CancellationToken cancellationToken = default)
     {
         if (authorId <= 0)
@@ -66,7 +100,7 @@ public class ArticleService : IArticleService
             return OperationResult<int>.Failure("Không xác định được tác giả bài viết.");
         }
 
-        var validationResult = await ValidateCreateRequestAsync(model);
+        var validationResult = await ValidateArticleRequestAsync(model);
         if (!validationResult.Succeeded)
         {
             return OperationResult<int>.Failure(validationResult.Message);
@@ -125,7 +159,72 @@ public class ArticleService : IArticleService
         }
     }
 
-    private async Task<OperationResult> ValidateCreateRequestAsync(ArticleCreateViewModel model)
+    public async Task<OperationResult> UpdateAsync(ArticleEditViewModel model, CancellationToken cancellationToken = default)
+    {
+        var existingPost = await _postRepository.GetByIdAsync(model.Id);
+        if (existingPost is null)
+        {
+            return OperationResult.Failure("Bài viết không tồn tại hoặc đã bị xóa.");
+        }
+
+        var validationResult = await ValidateArticleRequestAsync(model);
+        if (!validationResult.Succeeded)
+        {
+            return OperationResult.Failure(validationResult.Message);
+        }
+
+        string? uploadedThumbnailUrl = null;
+        if (model.Thumbnail is not null)
+        {
+            var uploadResult = await _fileUploadService.UploadArticleThumbnailAsync(model.Thumbnail, cancellationToken);
+            if (!uploadResult.Succeeded || string.IsNullOrWhiteSpace(uploadResult.Data))
+            {
+                return OperationResult.Failure(uploadResult.Message);
+            }
+
+            uploadedThumbnailUrl = uploadResult.Data;
+        }
+
+        var oldThumbnailUrl = existingPost.ThumbnailUrl;
+        existingPost.Title = model.Title.Trim();
+        existingPost.Slug = await _slugService.GenerateUniqueSlugAsync(
+            model.Title,
+            candidate => _postRepository.SlugExistsAsync(candidate, model.Id));
+        existingPost.Summary = model.Summary.Trim();
+        existingPost.Content = _htmlSanitizerService.Sanitize(model.Content);
+        existingPost.ThumbnailUrl = uploadedThumbnailUrl ?? existingPost.ThumbnailUrl;
+        existingPost.CategoryId = model.CategoryId;
+        existingPost.Status = model.Status;
+        existingPost.IsFeatured = model.Status == PostStatus.Published && model.IsFeatured;
+        existingPost.PublishedAt = model.Status == PostStatus.Published
+            ? model.PublishedAt ?? DateTime.UtcNow
+            : model.PublishedAt;
+        existingPost.UpdatedAtUtc = DateTime.UtcNow;
+        existingPost.MetaTitle = string.IsNullOrWhiteSpace(model.MetaTitle) ? null : model.MetaTitle.Trim();
+        existingPost.MetaDescription = string.IsNullOrWhiteSpace(model.MetaDescription) ? null : model.MetaDescription.Trim();
+        existingPost.Category = null;
+        existingPost.Author = null;
+        existingPost.DeletedByUser = null;
+
+        try
+        {
+            await _postRepository.UpdateAsync(existingPost);
+            if (uploadedThumbnailUrl is not null && !string.Equals(oldThumbnailUrl, uploadedThumbnailUrl, StringComparison.OrdinalIgnoreCase))
+            {
+                _fileUploadService.DeleteUploadedFile(oldThumbnailUrl);
+            }
+
+            return OperationResult.Success("Đã cập nhật bài viết.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Khong the cap nhat bai viet {ArticleId}.", model.Id);
+            _fileUploadService.DeleteUploadedFile(uploadedThumbnailUrl);
+            return OperationResult.Failure("Không thể cập nhật bài viết. Vui lòng thử lại.");
+        }
+    }
+
+    private async Task<OperationResult> ValidateArticleRequestAsync(ArticleCreateViewModel model)
     {
         if (!PostStatus.All.Contains(model.Status))
         {

@@ -122,6 +122,22 @@
   background: var(--soft);
 }
 
+.admin-current-thumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.admin-current-thumb img {
+  width: 110px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--soft);
+}
+
 @media (max-width: 760px) {
   .account-grid {
     grid-template-columns: 1fr;

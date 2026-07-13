@@ -34,6 +34,19 @@ public class ArticlesController : Controller
         return View("~/Views/Admin/Articles/Create.cshtml", model);
     }
 
+    [HttpGet("Edit/{id:int}")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var model = await _articleService.BuildEditViewModelAsync(id);
+        if (model is null)
+        {
+            TempData["ErrorMessage"] = "Bài viết không tồn tại hoặc đã bị xóa.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View("~/Views/Admin/Articles/Edit.cshtml", model);
+    }
+
     [HttpPost("Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ArticleCreateViewModel model, string command, CancellationToken cancellationToken)
@@ -61,6 +74,33 @@ public class ArticlesController : Controller
             ModelState.AddModelError(string.Empty, result.Message);
             var invalidModel = await _articleService.BuildCreateViewModelAsync(model);
             return View("~/Views/Admin/Articles/Create.cshtml", invalidModel);
+        }
+
+        TempData["SuccessMessage"] = result.Message;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("Edit/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, ArticleEditViewModel model, CancellationToken cancellationToken)
+    {
+        if (id != model.Id)
+        {
+            return BadRequest();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var invalidModel = await _articleService.BuildEditViewModelAsync(model);
+            return View("~/Views/Admin/Articles/Edit.cshtml", invalidModel);
+        }
+
+        var result = await _articleService.UpdateAsync(model, cancellationToken);
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.Message);
+            var invalidModel = await _articleService.BuildEditViewModelAsync(model);
+            return View("~/Views/Admin/Articles/Edit.cshtml", invalidModel);
         }
 
         TempData["SuccessMessage"] = result.Message;

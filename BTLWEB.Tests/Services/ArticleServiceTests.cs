@@ -76,6 +76,23 @@ public class ArticleServiceTests
     }
 
     [Fact]
+    public async Task BuildEditViewModelAsync_ShouldMapExistingPost()
+    {
+        var repository = new FakeAdminPostRepository();
+        repository.Posts.Add(CreateExistingPost());
+        var service = CreateService(repository);
+
+        var model = await service.BuildEditViewModelAsync(4);
+
+        Assert.NotNull(model);
+        Assert.Equal("Bài viết cũ", model.Title);
+        Assert.Equal("bai-viet-cu", model.Slug);
+        Assert.Equal("/uploads/articles/old.jpg", model.ExistingThumbnailUrl);
+        Assert.NotEmpty(model.Categories);
+        Assert.Equal(PostStatus.All.Length, model.Statuses.Count);
+    }
+
+    [Fact]
     public async Task CreateAsync_ShouldCreateDraftArticleWithServerSideFields()
     {
         var repository = new FakeAdminPostRepository();
@@ -183,7 +200,66 @@ public class ArticleServiceTests
         var result = await service.CreateAsync(model, authorId: 7);
 
         Assert.False(result.Succeeded);
-        Assert.Equal("/uploads/articles/test.jpg", uploadService.DeletedPath);
+        Assert.Contains("/uploads/articles/test.jpg", uploadService.DeletedPaths);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldUpdateEditableFieldsAndPreserveServerFields()
+    {
+        var repository = new FakeAdminPostRepository();
+        repository.Posts.Add(CreateExistingPost());
+        var uploadService = new FakeFileUploadService();
+        var service = CreateService(repository, uploadService);
+
+        var result = await service.UpdateAsync(new ArticleEditViewModel
+        {
+            Id = 4,
+            Title = " Ảnh mới ",
+            Summary = " Summary mới ",
+            Content = "<script>alert(1)</script><p>Nội dung</p>",
+            CategoryId = 1,
+            Status = PostStatus.Published,
+            IsFeatured = true,
+            Thumbnail = CreateFile(),
+            MetaTitle = " Meta mới ",
+            MetaDescription = " Mô tả mới "
+        });
+
+        Assert.True(result.Succeeded);
+        var post = Assert.Single(repository.Posts);
+        Assert.Equal(4, post.Id);
+        Assert.Equal(7, post.AuthorId);
+        Assert.Equal(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), post.CreatedAtUtc);
+        Assert.Equal(99, post.ViewCount);
+        Assert.Equal("anh-moi", post.Slug);
+        Assert.Equal("Ảnh mới", post.Title);
+        Assert.Equal("sanitized-content", post.Content);
+        Assert.Equal("/uploads/articles/test.jpg", post.ThumbnailUrl);
+        Assert.True(post.IsFeatured);
+        Assert.Contains("/uploads/articles/old.jpg", uploadService.DeletedPaths);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldDeleteNewUploadWhenDatabaseSaveFails()
+    {
+        var repository = new FakeAdminPostRepository { ThrowOnUpdate = true };
+        repository.Posts.Add(CreateExistingPost());
+        var uploadService = new FakeFileUploadService();
+        var service = CreateService(repository, uploadService);
+
+        var result = await service.UpdateAsync(new ArticleEditViewModel
+        {
+            Id = 4,
+            Title = "Ảnh mới",
+            Summary = "Summary mới",
+            Content = "<p>Nội dung</p>",
+            CategoryId = 1,
+            Status = PostStatus.Published,
+            Thumbnail = CreateFile()
+        });
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("/uploads/articles/test.jpg", uploadService.DeletedPaths);
     }
 
     private static ArticleService CreateService(
@@ -213,6 +289,28 @@ public class ArticleServiceTests
         };
     }
 
+    private static Post CreateExistingPost()
+    {
+        return new Post
+        {
+            Id = 4,
+            Title = "Bài viết cũ",
+            Slug = "bai-viet-cu",
+            Summary = "Summary cũ",
+            Content = "<p>Nội dung cũ</p>",
+            ThumbnailUrl = "/uploads/articles/old.jpg",
+            CategoryId = 1,
+            AuthorId = 7,
+            Status = PostStatus.Draft,
+            IsFeatured = false,
+            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            UpdatedAtUtc = new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+            ViewCount = 99,
+            MetaTitle = "Meta cũ",
+            MetaDescription = "Mô tả cũ"
+        };
+    }
+
     private static IFormFile CreateFile()
     {
         return new FormFile(new MemoryStream([1, 2, 3]), 0, 3, "file", "test.jpg")
@@ -228,6 +326,7 @@ public class ArticleServiceTests
         public HashSet<string> ExistingSlugs { get; init; } = [];
         public bool CategoryExists { get; init; } = true;
         public bool ThrowOnAdd { get; init; }
+        public bool ThrowOnUpdate { get; init; }
         public ArticleFilterViewModel? LastFilter { get; private set; }
         public PagedResult<Post> AdminArticlesResult { get; init; } = new();
 
@@ -247,7 +346,21 @@ public class ArticleServiceTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateAsync(Post post) => Task.CompletedTask;
+        public Task UpdateAsync(Post post)
+        {
+            if (ThrowOnUpdate)
+            {
+                throw new InvalidOperationException("DB failure");
+            }
+
+            var index = Posts.FindIndex(x => x.Id == post.Id);
+            if (index >= 0)
+            {
+                Posts[index] = post;
+            }
+
+            return Task.CompletedTask;
+        }
 
         public Task<PagedResult<Post>> GetAdminArticlesAsync(ArticleFilterViewModel filter)
         {
@@ -274,7 +387,7 @@ public class ArticleServiceTests
     private sealed class FakeFileUploadService : IFileUploadService
     {
         public OperationResult<string> UploadResult { get; init; } = OperationResult<string>.Success("/uploads/articles/test.jpg");
-        public string? DeletedPath { get; private set; }
+        public List<string> DeletedPaths { get; } = [];
 
         public Task<OperationResult<string>> UploadArticleThumbnailAsync(IFormFile? file, CancellationToken cancellationToken = default)
         {
@@ -283,7 +396,10 @@ public class ArticleServiceTests
 
         public void DeleteUploadedFile(string? relativePath)
         {
-            DeletedPath = relativePath;
+            if (!string.IsNullOrWhiteSpace(relativePath))
+            {
+                DeletedPaths.Add(relativePath);
+            }
         }
     }
 
