@@ -1,27 +1,31 @@
-@model ArticleCreateViewModel
+@model ArticleEditViewModel
 
 @{
-    ViewData["Title"] = "Tạo bài viết";
+    ViewData["Title"] = "Sửa bài viết";
 }
 
 <section class="account-shell">
     <div class="account-card">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div>
-                <h1>Tạo bài viết</h1>
-                <p class="text-muted mb-0">Tạo bài nháp hoặc xuất bản bài viết mới cho trang tin.</p>
+                <h1>Sửa bài viết</h1>
+                <p class="text-muted mb-0">Cập nhật nội dung, trạng thái và ảnh đại diện của bài viết.</p>
             </div>
             <a class="btn btn-outline-secondary" href="/Admin/Articles">Quay lại danh sách</a>
         </div>
 
-        @if (TempData["SuccessMessage"] is string successMessage)
-        {
-            <div class="alert alert-success">@successMessage</div>
-        }
-
-        <form action="/Admin/Articles/Create" method="post" enctype="multipart/form-data">
+        <form action="/Admin/Articles/Edit/@Model.Id" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="Slug" type="hidden" />
+            <input asp-for="ExistingThumbnailUrl" type="hidden" />
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label class="form-label">Slug hiện tại</label>
+                <input class="form-control" value="@Model.Slug" disabled />
+                <div class="form-text">Slug sẽ được tự động cập nhật theo tiêu đề và vẫn đảm bảo không trùng.</div>
+            </div>
 
             <div class="account-grid">
                 <div class="mb-3">
@@ -43,9 +47,14 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Thumbnail" class="form-label"></label>
-                    <input asp-for="Thumbnail" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp" />
-                    <span asp-validation-for="Thumbnail" class="text-danger"></span>
+                    <label asp-for="Status" class="form-label"></label>
+                    <select asp-for="Status" class="form-select">
+                        @foreach (var status in Model.Statuses)
+                        {
+                            <option value="@status.Value">@status.Text</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Status" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
@@ -53,6 +62,20 @@
                     <input asp-for="PublishedAt" class="form-control" />
                     <span asp-validation-for="PublishedAt" class="text-danger"></span>
                 </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Thumbnail" class="form-label"></label>
+                @if (!string.IsNullOrWhiteSpace(Model.ExistingThumbnailUrl))
+                {
+                    <div class="admin-current-thumb mb-2">
+                        <img src="@Model.ExistingThumbnailUrl" alt="@Model.Title" />
+                        <span>Ảnh hiện tại</span>
+                    </div>
+                }
+                <input asp-for="Thumbnail" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp" />
+                <div class="form-text">Bỏ trống nếu muốn giữ ảnh hiện tại.</div>
+                <span asp-validation-for="Thumbnail" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
@@ -88,8 +111,8 @@
             </div>
 
             <div class="account-actions">
-                <button class="btn btn-outline-primary" type="submit" name="command" value="draft">Lưu nháp</button>
-                <button class="btn btn-primary" type="submit" name="command" value="publish">Xuất bản</button>
+                <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+                <a class="btn btn-outline-secondary" href="/Admin/Articles">Hủy</a>
             </div>
         </form>
     </div>

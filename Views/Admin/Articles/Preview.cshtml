@@ -1,0 +1,108 @@
+@model ArticlePreviewViewModel
+
+@{
+    ViewData["Title"] = "Preview bài viết";
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h1>Preview bài viết</h1>
+                <p class="text-muted mb-0">Xem trước nội dung trước khi xuất bản hoặc kiểm tra lại lịch sử thao tác.</p>
+            </div>
+            <div class="account-actions m-0">
+                <a class="btn btn-outline-secondary" href="/Admin/Articles">Danh sách</a>
+                <a class="btn btn-primary" href="/Admin/Articles/Edit/@Model.Id">Sửa bài</a>
+            </div>
+        </div>
+
+        <article class="admin-preview">
+            <div class="post-category">@Model.CategoryName</div>
+            <h2>@Model.Title</h2>
+            <p class="text-muted">@Model.Summary</p>
+            <div class="post-meta mb-3">
+                <span>@GetStatusText(Model.Status)</span>
+                @if (!string.IsNullOrWhiteSpace(Model.AuthorName))
+                {
+                    <span>Tác giả: @Model.AuthorName</span>
+                }
+                <span>Tạo: @Model.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                @if (Model.UpdatedAtUtc is not null)
+                {
+                    <span>Sửa: @Model.UpdatedAtUtc.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ThumbnailUrl))
+            {
+                <img class="post-detail__cover" src="@Model.ThumbnailUrl" alt="@Model.Title" />
+            }
+
+            <div class="post-detail__body">
+                @Html.Raw(Model.Content)
+            </div>
+        </article>
+
+        <section class="admin-log-panel">
+            <h2>Nhật ký thao tác</h2>
+            @if (!Model.Logs.Any())
+            {
+                <div class="empty-state empty-state--small">Chưa có nhật ký thao tác cho bài viết này.</div>
+            }
+            else
+            {
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Thao tác</th>
+                            <th>Người thực hiện</th>
+                            <th>Trạng thái</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model.Logs)
+                        {
+                            <tr>
+                                <td>@log.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                <td>@GetActionText(log.Action)</td>
+                                <td>@(log.ActorName ?? "Không rõ")</td>
+                                <td>@(log.StatusBefore ?? "-") → @(log.StatusAfter ?? "-")</td>
+                                <td>@(log.IpAddress ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </section>
+    </div>
+</section>
+
+@functions {
+    private static string GetStatusText(string status)
+    {
+        return status switch
+        {
+            PostStatus.Published => "Xuất bản",
+            PostStatus.Hidden => "Ẩn",
+            PostStatus.Archived => "Lưu trữ",
+            _ => "Nháp"
+        };
+    }
+
+    private static string GetActionText(string action)
+    {
+        return action switch
+        {
+            ArticleAdminAction.Create => "Tạo bài",
+            ArticleAdminAction.Update => "Cập nhật",
+            ArticleAdminAction.ChangeStatus => "Đổi trạng thái",
+            ArticleAdminAction.SoftDelete => "Xóa mềm",
+            ArticleAdminAction.Restore => "Khôi phục",
+            ArticleAdminAction.Preview => "Preview",
+            _ => action
+        };
+    }
+}

@@ -30,4 +30,5 @@ public class User
     public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = [];
     public ICollection<Post> AuthoredPosts { get; set; } = [];
     public ICollection<Post> DeletedPosts { get; set; } = [];
+    public ICollection<ArticleAdminLog> ArticleAdminLogs { get; set; } = [];
 }

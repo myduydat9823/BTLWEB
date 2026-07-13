@@ -1,0 +1,132 @@
+@model ArticleListViewModel
+
+@{
+    ViewData["Title"] = "Bài viết đã xóa";
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h1>Bài viết đã xóa</h1>
+                <p class="text-muted mb-0">Khôi phục các bài viết đã bị xóa mềm khỏi hệ thống.</p>
+            </div>
+            <a class="btn btn-outline-secondary" href="/Admin/Articles">Quay lại bài viết</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <form method="get" action="/Admin/Articles/Deleted" class="row g-2 mb-4">
+            <div class="col-lg-5 col-md-6">
+                <input class="form-control" name="Search" value="@Model.Filter.Search" placeholder="Tìm theo tiêu đề..." />
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <select class="form-select" name="CategoryId">
+                    <option value="">Tất cả danh mục</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category.CategoryId" selected="@(Model.Filter.CategoryId == category.CategoryId)">@category.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <select class="form-select" name="Status">
+                    <option value="">Tất cả trạng thái</option>
+                    @foreach (var status in Model.Statuses)
+                    {
+                        <option value="@status.Value" selected="@(Model.Filter.Status == status.Value)">@status.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <button class="btn btn-primary w-100" type="submit">Lọc</button>
+            </div>
+        </form>
+
+        @if (!Model.Articles.Items.Any())
+        {
+            <div class="empty-state">Chưa có bài viết đã xóa phù hợp với bộ lọc hiện tại.</div>
+        }
+        else
+        {
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Bài viết</th>
+                        <th>Danh mục</th>
+                        <th>Trạng thái</th>
+                        <th>Người xóa</th>
+                        <th>Ngày xóa</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var article in Model.Articles.Items)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@article.Title</strong><br />
+                                <span class="text-muted">@article.Slug</span>
+                            </td>
+                            <td>@article.CategoryName</td>
+                            <td><span class="status-pill @GetStatusClass(article.Status)">@GetStatusText(article.Status)</span></td>
+                            <td>@(article.DeletedByUserName ?? "Chưa rõ")</td>
+                            <td>@(article.DeletedAtUtc?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                            <td>
+                                <div class="admin-row-actions">
+                                    <a class="btn btn-sm btn-outline-primary" href="/Admin/Articles/Preview/@article.Id?deleted=true">Preview</a>
+                                    <form method="post" action="/Admin/Articles/@article.Id/Restore" class="admin-inline-form">
+                                        @Html.AntiForgeryToken()
+                                        <button class="btn btn-sm btn-primary" type="submit">Khôi phục</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (Model.Articles.TotalPages > 1)
+        {
+            <div class="account-actions">
+                @for (var pageNumber = 1; pageNumber <= Model.Articles.TotalPages; pageNumber++)
+                {
+                    <a class="btn @(pageNumber == Model.Articles.Page ? "btn-primary" : "btn-outline-secondary")"
+                       href="/Admin/Articles/Deleted?page=@pageNumber&pageSize=@Model.Filter.PageSize&search=@Model.Filter.Search&categoryId=@Model.Filter.CategoryId&status=@Model.Filter.Status">@pageNumber</a>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@functions {
+    private static string GetStatusText(string status)
+    {
+        return status switch
+        {
+            PostStatus.Published => "Xuất bản",
+            PostStatus.Hidden => "Ẩn",
+            PostStatus.Archived => "Lưu trữ",
+            _ => "Nháp"
+        };
+    }
+
+    private static string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            PostStatus.Published => string.Empty,
+            PostStatus.Hidden => "status-pill--danger",
+            PostStatus.Archived => "status-pill--muted",
+            _ => "status-pill--warning"
+        };
+    }
+}

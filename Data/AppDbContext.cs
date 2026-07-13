@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<LoginLog> LoginLogs => Set<LoginLog>();
     public DbSet<UserRoleHistory> UserRoleHistories => Set<UserRoleHistory>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<ArticleAdminLog> ArticleAdminLogs => Set<ArticleAdminLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -107,6 +108,36 @@ public class AppDbContext : DbContext
                 .WithMany(x => x.DeletedPosts)
                 .HasForeignKey(x => x.DeletedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ArticleAdminLog>(entity =>
+        {
+            entity.ToTable("ArticleAdminLogs");
+            entity.HasKey(x => x.ArticleAdminLogId);
+
+            entity.Property(x => x.Action).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.StatusBefore).HasMaxLength(50);
+            entity.Property(x => x.StatusAfter).HasMaxLength(50);
+            entity.Property(x => x.TitleSnapshot).HasMaxLength(250).IsRequired();
+            entity.Property(x => x.Note).HasMaxLength(500);
+            entity.Property(x => x.IpAddress).HasMaxLength(64);
+            entity.Property(x => x.UserAgent).HasMaxLength(512);
+            entity.Property(x => x.CreatedAtUtc)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("SYSUTCDATETIME()");
+
+            entity.HasIndex(x => new { x.PostId, x.CreatedAtUtc });
+            entity.HasIndex(x => new { x.ActorUserId, x.CreatedAtUtc });
+
+            entity.HasOne(x => x.Post)
+                .WithMany(x => x.AdminLogs)
+                .HasForeignKey(x => x.PostId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.ActorUser)
+                .WithMany(x => x.ArticleAdminLogs)
+                .HasForeignKey(x => x.ActorUserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Role>(entity =>

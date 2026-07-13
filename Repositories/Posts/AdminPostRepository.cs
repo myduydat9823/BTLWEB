@@ -21,6 +21,13 @@ public class AdminPostRepository : IAdminPostRepository
             .FirstOrDefaultAsync(x => x.Id == id);
     }
 
+    public Task<Post?> GetDeletedByIdAsync(int id)
+    {
+        return BuildAdminPostQuery(includeDeleted: true)
+            .Where(x => x.IsDeleted)
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
     public Task<Post?> GetBySlugAsync(string slug)
     {
         var now = DateTime.UtcNow;
@@ -60,47 +67,12 @@ public class AdminPostRepository : IAdminPostRepository
 
     public async Task<PagedResult<Post>> GetAdminArticlesAsync(ArticleFilterViewModel filter)
     {
-        var page = Math.Max(filter.Page, 1);
-        var pageSize = Math.Clamp(filter.PageSize, 1, 50);
+        return await GetArticlesAsync(filter, includeDeleted: false);
+    }
 
-        var query = BuildAdminPostQuery();
-
-        if (!string.IsNullOrWhiteSpace(filter.Search))
-        {
-            var keyword = filter.Search.Trim();
-            query = query.Where(x => x.Title.Contains(keyword));
-        }
-
-        if (filter.CategoryId is > 0)
-        {
-            query = query.Where(x => x.CategoryId == filter.CategoryId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.Status))
-        {
-            query = query.Where(x => x.Status == filter.Status);
-        }
-
-        if (filter.IsFeatured is not null)
-        {
-            query = query.Where(x => x.IsFeatured == filter.IsFeatured.Value);
-        }
-
-        var totalItems = await query.CountAsync();
-        var items = await query
-            .OrderByDescending(x => x.CreatedAtUtc)
-            .ThenByDescending(x => x.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        return new PagedResult<Post>
-        {
-            Items = items,
-            Page = page,
-            PageSize = pageSize,
-            TotalItems = totalItems
-        };
+    public async Task<PagedResult<Post>> GetDeletedArticlesAsync(ArticleFilterViewModel filter)
+    {
+        return await GetArticlesAsync(filter, includeDeleted: true);
     }
 
     public Task<List<Post>> GetPublishedArticlesAsync(int take, int? categoryId = null)
@@ -143,12 +115,77 @@ public class AdminPostRepository : IAdminPostRepository
             .ToListAsync();
     }
 
-    private IQueryable<Post> BuildAdminPostQuery()
+    public async Task AddLogAsync(ArticleAdminLog log)
     {
-        return _dbContext.Posts
+        await _dbContext.ArticleAdminLogs.AddAsync(log);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public Task<List<ArticleAdminLog>> GetLogsByPostIdAsync(int postId, int take = 30)
+    {
+        return _dbContext.ArticleAdminLogs
+            .AsNoTracking()
+            .Include(x => x.ActorUser)
+            .Where(x => x.PostId == postId)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Take(Math.Clamp(take, 1, 100))
+            .ToListAsync();
+    }
+
+    private async Task<PagedResult<Post>> GetArticlesAsync(ArticleFilterViewModel filter, bool includeDeleted)
+    {
+        var page = Math.Max(filter.Page, 1);
+        var pageSize = Math.Clamp(filter.PageSize, 1, 50);
+
+        var query = BuildAdminPostQuery(includeDeleted)
+            .Where(x => x.IsDeleted == includeDeleted);
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var keyword = filter.Search.Trim();
+            query = query.Where(x => x.Title.Contains(keyword));
+        }
+
+        if (filter.CategoryId is > 0)
+        {
+            query = query.Where(x => x.CategoryId == filter.CategoryId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Status))
+        {
+            query = query.Where(x => x.Status == filter.Status);
+        }
+
+        if (filter.IsFeatured is not null)
+        {
+            query = query.Where(x => x.IsFeatured == filter.IsFeatured.Value);
+        }
+
+        var totalItems = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(x => includeDeleted ? x.DeletedAtUtc : x.CreatedAtUtc)
+            .ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PagedResult<Post>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = totalItems
+        };
+    }
+
+    private IQueryable<Post> BuildAdminPostQuery(bool includeDeleted = false)
+    {
+        var query = _dbContext.Posts
             .AsNoTracking()
             .Include(x => x.Category)
             .Include(x => x.Author)
-            .Where(x => !x.IsDeleted);
+            .Include(x => x.DeletedByUser);
+
+        return includeDeleted ? query : query.Where(x => !x.IsDeleted);
     }
 }

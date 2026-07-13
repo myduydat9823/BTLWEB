@@ -1,0 +1,57 @@
+@model PostDetailViewModel
+
+@{
+    ViewData["Title"] = string.IsNullOrWhiteSpace(Model.MetaTitle) ? Model.Title : Model.MetaTitle;
+    ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.MetaDescription) ? Model.Summary : Model.MetaDescription;
+}
+
+<article class="post-detail">
+    <header class="post-detail__hero">
+        <div class="page-shell">
+            <a class="breadcrumb-link" href="/Category/@Model.CategorySlug">@Model.CategoryName</a>
+            <h1>@Model.Title</h1>
+            <p>@Model.Summary</p>
+            <div class="post-meta">
+                @if (!string.IsNullOrWhiteSpace(Model.AuthorName))
+                {
+                    <span>Tác giả: @Model.AuthorName</span>
+                }
+                @if (Model.PublishedAt is not null)
+                {
+                    <span>@Model.PublishedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                }
+                <span>@Model.ViewCount lượt xem</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-shell post-detail__layout">
+        <div class="post-detail__content">
+            @if (!string.IsNullOrWhiteSpace(Model.ThumbnailUrl))
+            {
+                <img class="post-detail__cover" src="@Model.ThumbnailUrl" alt="@Model.Title" />
+            }
+
+            <div class="post-detail__body">
+                @Html.Raw(Model.Content)
+            </div>
+        </div>
+
+        <aside class="sidebar">
+            <section class="sidebar-panel">
+                <div class="sidebar-panel__heading">
+                    <h2>Bài liên quan</h2>
+                </div>
+                @if (Model.RelatedPosts.Any())
+                {
+                    <partial name="~/Views/Shared/_PostList.cshtml"
+                             model="new PostListDisplayViewModel(Model.RelatedPosts, string.Empty, false)" />
+                }
+                else
+                {
+                    <div class="empty-state empty-state--small">Chưa có bài liên quan.</div>
+                }
+            </section>
+        </aside>
+    </div>
+</article>

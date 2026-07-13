@@ -178,6 +178,30 @@ public static class AppDbSchemaInitializer
                 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Posts_AuthorId' AND object_id = OBJECT_ID(N'dbo.Posts'))
                     CREATE INDEX IX_Posts_AuthorId ON dbo.Posts(AuthorId);
             END
+            """,
+            """
+            IF OBJECT_ID(N'dbo.ArticleAdminLogs', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.ArticleAdminLogs
+                (
+                    ArticleAdminLogId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ArticleAdminLogs PRIMARY KEY,
+                    PostId INT NOT NULL,
+                    ActorUserId INT NULL,
+                    Action NVARCHAR(80) NOT NULL,
+                    StatusBefore NVARCHAR(50) NULL,
+                    StatusAfter NVARCHAR(50) NULL,
+                    TitleSnapshot NVARCHAR(250) NOT NULL,
+                    Note NVARCHAR(500) NULL,
+                    IpAddress NVARCHAR(64) NULL,
+                    UserAgent NVARCHAR(512) NULL,
+                    CreatedAtUtc DATETIME2 NOT NULL CONSTRAINT DF_ArticleAdminLogs_CreatedAtUtc DEFAULT(SYSUTCDATETIME()),
+                    CONSTRAINT FK_ArticleAdminLogs_Posts FOREIGN KEY (PostId) REFERENCES dbo.Posts(Id),
+                    CONSTRAINT FK_ArticleAdminLogs_Users FOREIGN KEY (ActorUserId) REFERENCES dbo.Users(UserId) ON DELETE SET NULL
+                );
+
+                CREATE INDEX IX_ArticleAdminLogs_PostId_CreatedAtUtc ON dbo.ArticleAdminLogs(PostId, CreatedAtUtc);
+                CREATE INDEX IX_ArticleAdminLogs_ActorUserId_CreatedAtUtc ON dbo.ArticleAdminLogs(ActorUserId, CreatedAtUtc);
+            END
             """
         ];
     }

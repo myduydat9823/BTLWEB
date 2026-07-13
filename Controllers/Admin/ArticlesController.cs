@@ -20,11 +20,51 @@ public class ArticlesController : Controller
         _currentUserService = currentUserService;
     }
 
+    [HttpGet("")]
+    public async Task<IActionResult> Index([FromQuery] ArticleFilterViewModel filter)
+    {
+        var model = await _articleService.GetAdminListAsync(filter);
+        return View("~/Views/Admin/Articles/Index.cshtml", model);
+    }
+
+    [HttpGet("Deleted")]
+    public async Task<IActionResult> Deleted([FromQuery] ArticleFilterViewModel filter)
+    {
+        var model = await _articleService.GetDeletedListAsync(filter);
+        return View("~/Views/Admin/Articles/Deleted.cshtml", model);
+    }
+
     [HttpGet("Create")]
     public async Task<IActionResult> Create()
     {
         var model = await _articleService.BuildCreateViewModelAsync();
         return View("~/Views/Admin/Articles/Create.cshtml", model);
+    }
+
+    [HttpGet("Edit/{id:int}")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var model = await _articleService.BuildEditViewModelAsync(id);
+        if (model is null)
+        {
+            TempData["ErrorMessage"] = "Bài viết không tồn tại hoặc đã bị xóa.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View("~/Views/Admin/Articles/Edit.cshtml", model);
+    }
+
+    [HttpGet("Preview/{id:int}")]
+    public async Task<IActionResult> Preview(int id, bool deleted = false)
+    {
+        var model = await _articleService.BuildPreviewViewModelAsync(id, deleted);
+        if (model is null)
+        {
+            TempData["ErrorMessage"] = "Bài viết không tồn tại.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View("~/Views/Admin/Articles/Preview.cshtml", model);
     }
 
     [HttpPost("Create")]
@@ -48,7 +88,7 @@ public class ArticlesController : Controller
             return Challenge();
         }
 
-        var result = await _articleService.CreateAsync(model, authorId.Value, cancellationToken);
+        var result = await _articleService.CreateAsync(model, authorId.Value, GetIpAddress(), GetUserAgent(), cancellationToken);
         if (!result.Succeeded)
         {
             ModelState.AddModelError(string.Empty, result.Message);
@@ -57,6 +97,94 @@ public class ArticlesController : Controller
         }
 
         TempData["SuccessMessage"] = result.Message;
-        return RedirectToAction(nameof(Create));
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("Edit/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, ArticleEditViewModel model, CancellationToken cancellationToken)
+    {
+        if (id != model.Id)
+        {
+            return BadRequest();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var invalidModel = await _articleService.BuildEditViewModelAsync(model);
+            return View("~/Views/Admin/Articles/Edit.cshtml", invalidModel);
+        }
+
+        var actorId = _currentUserService.UserId;
+        if (actorId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await _articleService.UpdateAsync(model, actorId.Value, GetIpAddress(), GetUserAgent(), cancellationToken);
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.Message);
+            var invalidModel = await _articleService.BuildEditViewModelAsync(model);
+            return View("~/Views/Admin/Articles/Edit.cshtml", invalidModel);
+        }
+
+        TempData["SuccessMessage"] = result.Message;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("{id:int}/ChangeStatus")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeStatus(int id, string status)
+    {
+        var actorId = _currentUserService.UserId;
+        if (actorId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await _articleService.ChangeStatusAsync(id, status, actorId.Value, GetIpAddress(), GetUserAgent());
+        TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("{id:int}/Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await _articleService.SoftDeleteAsync(id, userId.Value, GetIpAddress(), GetUserAgent());
+        TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("{id:int}/Restore")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await _articleService.RestoreAsync(id, userId.Value, GetIpAddress(), GetUserAgent());
+        TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+        return RedirectToAction(nameof(Deleted));
+    }
+
+    private string? GetIpAddress()
+    {
+        return HttpContext.Connection.RemoteIpAddress?.ToString();
+    }
+
+    private string? GetUserAgent()
+    {
+        return Request.Headers.UserAgent.ToString();
     }
 }

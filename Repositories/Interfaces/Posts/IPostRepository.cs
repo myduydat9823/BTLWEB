@@ -11,4 +11,6 @@ public interface IPostRepository
     Task<List<PostCardViewModel>> GetPostsByCategorySlugAsync(string categorySlug, int take);
     Task<CategorySummaryViewModel?> GetCategoryBySlugAsync(string categorySlug);
     Task<PostCardViewModel?> GetMainFeaturedPostAsync();
+    Task<PostDetailViewModel?> GetDetailBySlugAsync(string slug);
+    Task IncrementViewCountAsync(int id);
 }
