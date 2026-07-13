@@ -72,7 +72,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         await dbContext.Database.EnsureCreatedAsync();
-        await AppDbSchemaInitializer.EnsureAuthSchemaAsync(dbContext);
+        await AppDbSchemaInitializer.EnsureSchemaAsync(dbContext);
         await AppDbSeeder.SeedAsync(dbContext, app.Configuration);
     }
     catch (Exception ex)

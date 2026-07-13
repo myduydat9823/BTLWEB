@@ -28,4 +28,6 @@ public class User
     public ICollection<LoginLog> LoginLogs { get; set; } = [];
     public ICollection<UserRoleHistory> RoleHistories { get; set; } = [];
     public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = [];
+    public ICollection<Post> AuthoredPosts { get; set; } = [];
+    public ICollection<Post> DeletedPosts { get; set; } = [];
 }

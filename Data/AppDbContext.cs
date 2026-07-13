@@ -60,6 +60,12 @@ public class AppDbContext : DbContext
             entity.Property(x => x.ThumbnailUrl)
                 .HasMaxLength(500);
 
+            entity.Property(x => x.MetaTitle)
+                .HasMaxLength(250);
+
+            entity.Property(x => x.MetaDescription)
+                .HasMaxLength(500);
+
             entity.Property(x => x.Status)
                 .HasMaxLength(50)
                 .IsRequired();
@@ -70,14 +76,36 @@ public class AppDbContext : DbContext
             entity.Property(x => x.PublishedAt)
                 .HasColumnType("datetime2");
 
+            entity.Property(x => x.CreatedAtUtc)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("SYSUTCDATETIME()");
+
+            entity.Property(x => x.UpdatedAtUtc)
+                .HasColumnType("datetime2");
+
+            entity.Property(x => x.DeletedAtUtc)
+                .HasColumnType("datetime2");
+
             entity.HasIndex(x => x.Slug).IsUnique();
             entity.HasIndex(x => x.PublishedAt);
             entity.HasIndex(x => x.ViewCount);
             entity.HasIndex(x => new { x.IsFeatured, x.PublishedAt });
+            entity.HasIndex(x => new { x.Status, x.IsDeleted, x.PublishedAt });
+            entity.HasIndex(x => x.AuthorId);
 
             entity.HasOne(x => x.Category)
                 .WithMany(x => x.Posts)
                 .HasForeignKey(x => x.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.Author)
+                .WithMany(x => x.AuthoredPosts)
+                .HasForeignKey(x => x.AuthorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.DeletedByUser)
+                .WithMany(x => x.DeletedPosts)
+                .HasForeignKey(x => x.DeletedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
