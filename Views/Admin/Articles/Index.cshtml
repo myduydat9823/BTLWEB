@@ -11,7 +11,10 @@
                 <h1>Quản lý bài viết</h1>
                 <p class="text-muted mb-0">Theo dõi, tìm kiếm và lọc các bài viết trong hệ thống.</p>
             </div>
-            <a class="btn btn-primary" href="/Admin/Articles/Create">Tạo bài viết</a>
+            <div class="account-actions m-0">
+                <a class="btn btn-outline-secondary" href="/Admin/Articles/Deleted">Bài đã xóa</a>
+                <a class="btn btn-primary" href="/Admin/Articles/Create">Tạo bài viết</a>
+            </div>
         </div>
 
         @if (TempData["SuccessMessage"] is string successMessage)
@@ -111,6 +114,7 @@
                             <td>
                                 <div class="admin-row-actions">
                                     <a class="btn btn-sm btn-outline-primary" href="/Admin/Articles/Edit/@article.Id">Sửa</a>
+                                    <a class="btn btn-sm btn-outline-primary" href="/Admin/Articles/Preview/@article.Id">Preview</a>
                                     <a class="btn btn-sm btn-outline-secondary" href="/Post/Detail/@article.Slug" target="_blank" rel="noopener">Xem</a>
                                     <form method="post" action="/Admin/Articles/@article.Id/ChangeStatus" class="admin-inline-form">
                                         @Html.AntiForgeryToken()

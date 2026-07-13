@@ -25,4 +25,5 @@ public class Post
     public Category? Category { get; set; }
     public User? Author { get; set; }
     public User? DeletedByUser { get; set; }
+    public ICollection<ArticleAdminLog> AdminLogs { get; set; } = [];
 }

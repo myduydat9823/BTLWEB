@@ -27,6 +27,13 @@ public class ArticlesController : Controller
         return View("~/Views/Admin/Articles/Index.cshtml", model);
     }
 
+    [HttpGet("Deleted")]
+    public async Task<IActionResult> Deleted([FromQuery] ArticleFilterViewModel filter)
+    {
+        var model = await _articleService.GetDeletedListAsync(filter);
+        return View("~/Views/Admin/Articles/Deleted.cshtml", model);
+    }
+
     [HttpGet("Create")]
     public async Task<IActionResult> Create()
     {
@@ -45,6 +52,19 @@ public class ArticlesController : Controller
         }
 
         return View("~/Views/Admin/Articles/Edit.cshtml", model);
+    }
+
+    [HttpGet("Preview/{id:int}")]
+    public async Task<IActionResult> Preview(int id, bool deleted = false)
+    {
+        var model = await _articleService.BuildPreviewViewModelAsync(id, deleted);
+        if (model is null)
+        {
+            TempData["ErrorMessage"] = "Bài viết không tồn tại.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View("~/Views/Admin/Articles/Preview.cshtml", model);
     }
 
     [HttpPost("Create")]
@@ -68,7 +88,7 @@ public class ArticlesController : Controller
             return Challenge();
         }
 
-        var result = await _articleService.CreateAsync(model, authorId.Value, cancellationToken);
+        var result = await _articleService.CreateAsync(model, authorId.Value, GetIpAddress(), GetUserAgent(), cancellationToken);
         if (!result.Succeeded)
         {
             ModelState.AddModelError(string.Empty, result.Message);
@@ -95,7 +115,13 @@ public class ArticlesController : Controller
             return View("~/Views/Admin/Articles/Edit.cshtml", invalidModel);
         }
 
-        var result = await _articleService.UpdateAsync(model, cancellationToken);
+        var actorId = _currentUserService.UserId;
+        if (actorId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await _articleService.UpdateAsync(model, actorId.Value, GetIpAddress(), GetUserAgent(), cancellationToken);
         if (!result.Succeeded)
         {
             ModelState.AddModelError(string.Empty, result.Message);
@@ -111,7 +137,13 @@ public class ArticlesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeStatus(int id, string status)
     {
-        var result = await _articleService.ChangeStatusAsync(id, status);
+        var actorId = _currentUserService.UserId;
+        if (actorId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await _articleService.ChangeStatusAsync(id, status, actorId.Value, GetIpAddress(), GetUserAgent());
         TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Message;
         return RedirectToAction(nameof(Index));
     }
@@ -126,8 +158,33 @@ public class ArticlesController : Controller
             return Challenge();
         }
 
-        var result = await _articleService.SoftDeleteAsync(id, userId.Value);
+        var result = await _articleService.SoftDeleteAsync(id, userId.Value, GetIpAddress(), GetUserAgent());
         TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Message;
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("{id:int}/Restore")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await _articleService.RestoreAsync(id, userId.Value, GetIpAddress(), GetUserAgent());
+        TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+        return RedirectToAction(nameof(Deleted));
+    }
+
+    private string? GetIpAddress()
+    {
+        return HttpContext.Connection.RemoteIpAddress?.ToString();
+    }
+
+    private string? GetUserAgent()
+    {
+        return Request.Headers.UserAgent.ToString();
     }
 }

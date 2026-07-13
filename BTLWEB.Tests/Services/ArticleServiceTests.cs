@@ -223,7 +223,7 @@ public class ArticleServiceTests
             Thumbnail = CreateFile(),
             MetaTitle = " Meta mới ",
             MetaDescription = " Mô tả mới "
-        });
+        }, actorUserId: 7);
 
         Assert.True(result.Succeeded);
         var post = Assert.Single(repository.Posts);
@@ -256,7 +256,7 @@ public class ArticleServiceTests
             CategoryId = 1,
             Status = PostStatus.Published,
             Thumbnail = CreateFile()
-        });
+        }, actorUserId: 7);
 
         Assert.False(result.Succeeded);
         Assert.Contains("/uploads/articles/test.jpg", uploadService.DeletedPaths);
@@ -269,7 +269,7 @@ public class ArticleServiceTests
         repository.Posts.Add(CreateExistingPost());
         var service = CreateService(repository);
 
-        var result = await service.ChangeStatusAsync(4, PostStatus.Published);
+        var result = await service.ChangeStatusAsync(4, PostStatus.Published, actorUserId: 7);
 
         Assert.True(result.Succeeded);
         var post = Assert.Single(repository.Posts);
@@ -288,7 +288,7 @@ public class ArticleServiceTests
         repository.Posts.Add(post);
         var service = CreateService(repository);
 
-        var result = await service.ChangeStatusAsync(4, PostStatus.Hidden);
+        var result = await service.ChangeStatusAsync(4, PostStatus.Hidden, actorUserId: 7);
 
         Assert.True(result.Succeeded);
         Assert.Equal(PostStatus.Hidden, post.Status);
@@ -375,6 +375,7 @@ public class ArticleServiceTests
     private sealed class FakeAdminPostRepository : IAdminPostRepository
     {
         public List<Post> Posts { get; } = [];
+        public List<ArticleAdminLog> Logs { get; } = [];
         public HashSet<string> ExistingSlugs { get; init; } = [];
         public bool CategoryExists { get; init; } = true;
         public bool ThrowOnAdd { get; init; }
@@ -383,6 +384,7 @@ public class ArticleServiceTests
         public PagedResult<Post> AdminArticlesResult { get; init; } = new();
 
         public Task<Post?> GetByIdAsync(int id) => Task.FromResult<Post?>(Posts.FirstOrDefault(x => x.Id == id));
+        public Task<Post?> GetDeletedByIdAsync(int id) => Task.FromResult<Post?>(Posts.FirstOrDefault(x => x.Id == id && x.IsDeleted));
         public Task<Post?> GetBySlugAsync(string slug) => Task.FromResult<Post?>(Posts.FirstOrDefault(x => x.Slug == slug));
         public Task<bool> SlugExistsAsync(string slug, int? excludedPostId = null) => Task.FromResult(ExistingSlugs.Contains(slug));
 
@@ -420,6 +422,12 @@ public class ArticleServiceTests
             return Task.FromResult(AdminArticlesResult);
         }
 
+        public Task<PagedResult<Post>> GetDeletedArticlesAsync(ArticleFilterViewModel filter)
+        {
+            LastFilter = filter;
+            return Task.FromResult(AdminArticlesResult);
+        }
+
         public Task<List<Post>> GetPublishedArticlesAsync(int take, int? categoryId = null)
         {
             return Task.FromResult(new List<Post>());
@@ -433,6 +441,17 @@ public class ArticleServiceTests
             {
                 new() { CategoryId = 1, Name = "Tin tức" }
             });
+        }
+
+        public Task AddLogAsync(ArticleAdminLog log)
+        {
+            Logs.Add(log);
+            return Task.CompletedTask;
+        }
+
+        public Task<List<ArticleAdminLog>> GetLogsByPostIdAsync(int postId, int take = 30)
+        {
+            return Task.FromResult(Logs.Where(x => x.PostId == postId).Take(take).ToList());
         }
     }
 

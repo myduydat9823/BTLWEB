@@ -12,5 +12,7 @@ public class ArticleListItemViewModel
     public bool IsFeatured { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? PublishedAt { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+    public string? DeletedByUserName { get; set; }
     public int ViewCount { get; set; }
 }

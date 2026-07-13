@@ -109,6 +109,67 @@ public class PostRepository : IPostRepository
                 .FirstOrDefaultAsync());
     }
 
+    public async Task<PostDetailViewModel?> GetDetailBySlugAsync(string slug)
+    {
+        try
+        {
+            var post = await BuildPublishedPostsQuery()
+                .Include(x => x.Author)
+                .Where(x => x.Slug == slug)
+                .Select(x => new PostDetailViewModel
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Slug = x.Slug,
+                    Summary = x.Summary,
+                    Content = x.Content ?? string.Empty,
+                    ThumbnailUrl = x.ThumbnailUrl,
+                    CategoryId = x.CategoryId,
+                    CategoryName = x.Category != null ? x.Category.Name : string.Empty,
+                    CategorySlug = x.Category != null ? x.Category.Slug : string.Empty,
+                    AuthorName = x.Author != null ? x.Author.FullName : null,
+                    PublishedAt = x.PublishedAt,
+                    ViewCount = x.ViewCount,
+                    MetaTitle = x.MetaTitle,
+                    MetaDescription = x.MetaDescription
+                })
+                .FirstOrDefaultAsync();
+
+            if (post is null)
+            {
+                return null;
+            }
+
+            post.RelatedPosts = await BuildPublishedPostsQuery()
+                .Where(x => x.CategoryId == post.CategoryId && x.Id != post.Id)
+                .OrderByDescending(x => x.PublishedAt)
+                .Take(4)
+                .Select(MapToCard())
+                .ToListAsync();
+
+            return post;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Khong the tai chi tiet bai viet {Slug}.", slug);
+            return null;
+        }
+    }
+
+    public async Task IncrementViewCountAsync(int id)
+    {
+        try
+        {
+            await _dbContext.Posts
+                .Where(x => x.Id == id && !x.IsDeleted)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.ViewCount, x => x.ViewCount + 1));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Khong the tang luot xem bai viet {PostId}.", id);
+        }
+    }
+
     private IQueryable<Post> BuildPublishedPostsQuery()
     {
         var now = DateTime.UtcNow;
