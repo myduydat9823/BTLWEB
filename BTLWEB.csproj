@@ -20,6 +20,9 @@
     <Content Remove="BTLWEB.Tests\**\*" />
     <EmbeddedResource Remove="BTLWEB.Tests\**\*" />
     <None Remove="BTLWEB.Tests\**\*" />
+    <None Update="Database\init-btlweb.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

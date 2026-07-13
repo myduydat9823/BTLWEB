@@ -1,3 +1,5 @@
+using BTLWEB.ViewModels.Competition;
+
 namespace BTLWEB.ViewModels;
 
 public class CategoryIndexViewModel
@@ -6,4 +8,5 @@ public class CategoryIndexViewModel
     public string CategoryName { get; set; } = string.Empty;
     public string CategorySlug { get; set; } = string.Empty;
     public List<PostCardViewModel> Posts { get; set; } = [];
+    public List<CompetitionListViewModel> Competitions { get; set; } = [];
 }

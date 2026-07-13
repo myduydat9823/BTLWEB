@@ -1,0 +1,71 @@
+@model CreateCompetitionViewModel
+
+@{
+    ViewData["Title"] = "Tạo cuộc thi";
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <h1>Tạo cuộc thi</h1>
+
+        <form method="post" action="/Admin/Competition/Create">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Rules" class="form-label"></label>
+                <textarea asp-for="Rules" class="form-control" rows="6"></textarea>
+                <span asp-validation-for="Rules" class="text-danger"></span>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label asp-for="SubmissionStartDate" class="form-label"></label>
+                    <input asp-for="SubmissionStartDate" class="form-control" type="datetime-local" />
+                    <span asp-validation-for="SubmissionStartDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="SubmissionEndDate" class="form-label"></label>
+                    <input asp-for="SubmissionEndDate" class="form-control" type="datetime-local" />
+                    <span asp-validation-for="SubmissionEndDate" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Status" class="form-label"></label>
+                <select asp-for="Status" class="form-select">
+                    <option value="0">Chờ duyệt</option>
+                    <option value="1">Đang mở</option>
+                    <option value="2">Đang chấm</option>
+                    <option value="3">Đã kết thúc</option>
+                    <option value="4">Đã xuất bản</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ImageUrl" class="form-label"></label>
+                <input asp-for="ImageUrl" class="form-control" placeholder="https://example.com/image.jpg" />
+                <span asp-validation-for="ImageUrl" class="text-danger"></span>
+            </div>
+
+            <div class="account-actions">
+                <a class="btn btn-outline-secondary" href="/Admin/Competition">Hủy</a>
+                <button class="btn btn-primary" type="submit">Tạo cuộc thi</button>
+            </div>
+        </form>
+    </div>
+</section>

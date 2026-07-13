@@ -1,4 +1,5 @@
 using BTLWEB.Repositories.Interfaces;
+using BTLWEB.Services.Interfaces;
 using BTLWEB.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,10 +8,14 @@ namespace BTLWEB.Controllers;
 public class CategoryController : Controller
 {
     private readonly IPostRepository _postRepository;
+    private readonly ICompetitionService _competitionService;
 
-    public CategoryController(IPostRepository postRepository)
+    public CategoryController(
+        IPostRepository postRepository,
+        ICompetitionService competitionService)
     {
         _postRepository = postRepository;
+        _competitionService = competitionService;
     }
 
     [HttpGet("Category/{slug}")]
@@ -34,6 +39,11 @@ public class CategoryController : Controller
             CategorySlug = category.Slug,
             Posts = await _postRepository.GetPostsByCategoryIdAsync(category.Id)
         };
+
+        if (slug == "cuoc-thi-anh")
+        {
+            model.Competitions = await _competitionService.GetAllAsync();
+        }
 
         return View(model);
     }

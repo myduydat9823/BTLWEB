@@ -1,0 +1,300 @@
+@model CompetitionDetailViewModel
+
+@{
+    ViewData["Title"] = Model.Name;
+
+    var statusLabels = new Dictionary<int, string>
+    {
+        { 0, "Chờ duyệt" },
+        { 1, "Đang mở" },
+        { 2, "Đang chấm" },
+        { 3, "Đã kết thúc" },
+        { 4, "Đã xuất bản" }
+    };
+
+    var isOpen = Model.Status == CompetitionStatus.OpenForSubmission;
+    var statusClass = isOpen
+        ? "contest-badge--open"
+        : Model.Status == CompetitionStatus.Judging
+            ? "contest-badge--voting"
+            : "contest-badge--closed";
+}
+
+@section Styles {
+    <style>
+        .contest-detail-hero {
+            position: relative;
+            width: 100%;
+            height: 420px;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+
+        .contest-detail-hero__image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .contest-detail-hero__overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
+        }
+
+        .contest-detail-hero__badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            z-index: 10;
+        }
+
+        .contest-detail-info {
+            background: #fff;
+            padding: 24px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .contest-detail-title {
+            margin: 0 0 20px;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 900;
+            line-height: 1.2;
+            color: var(--ink);
+        }
+
+        .contest-detail-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .contest-detail-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .contest-detail-stat__label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .contest-detail-stat__value {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--ink);
+            line-height: 1;
+        }
+
+        .contest-detail-stat__sub {
+            font-size: 0.8rem;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+    </style>
+}
+
+<section class="contest-detail-hero">
+    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+    {
+        <img src="@Model.ImageUrl" class="contest-detail-hero__image" alt="@Model.Name" />
+        <div class="contest-detail-hero__overlay"></div>
+    }
+    <div class="contest-detail-hero__badge">
+        @statusLabels.GetValueOrDefault((int)Model.Status, "Không xác định")
+    </div>
+</section>
+
+<section class="contest-detail-info">
+    <div class="page-shell">
+        <h1 class="contest-detail-title">@Model.Name</h1>
+        
+        <div class="contest-detail-stats">
+            <div class="contest-detail-stat">
+                <span class="contest-detail-stat__label">Hạn nộp ảnh</span>
+                <span class="contest-detail-stat__value">@Model.SubmissionEndDate.ToString("dd-MM-yyyy")</span>
+                <span class="contest-detail-stat__sub">@Model.SubmissionEndDate.ToString("HH:mm")</span>
+            </div>
+            
+            <div class="contest-detail-stat">
+                <span class="contest-detail-stat__label">Tác giả</span>
+                <span class="contest-detail-stat__value">@Model.EntryCount</span>
+            </div>
+            
+            <div class="contest-detail-stat">
+                <span class="contest-detail-stat__label">Tác phẩm</span>
+                <span class="contest-detail-stat__value">@Model.EntryCount</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="contest-detail-body">
+    <div class="page-shell">
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert--success">
+                <span class="alert__icon">&#10003;</span>
+                <span>@successMessage</span>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert--error">
+                <span class="alert__icon">&#9888;</span>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <div class="contest-detail-layout">
+
+            <div class="contest-detail-main">
+
+                <div class="contest-section">
+                    <h2>📝 Mô tả cuộc thi</h2>
+
+                    @if (string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        <p class="text-muted">Chưa có mô tả.</p>
+                    }
+                    else
+                    {
+                        <div class="contest-content">
+                            @Model.Description
+                        </div>
+                    }
+                </div>
+
+                <div class="contest-section">
+                    <h2>📖 Thể lệ cuộc thi</h2>
+
+                    @if (string.IsNullOrWhiteSpace(Model.Rules))
+                    {
+                        <p class="text-muted">Chưa có thể lệ.</p>
+                    }
+                    else
+                    {
+                        <div class="contest-content">
+                            @Model.Rules
+                        </div>
+                    }
+                </div>
+
+                @if (Model.Entries.Any())
+                {
+                    <div class="contest-section">
+
+                        <h2>📷 Bài dự thi (@Model.EntryCount)</h2>
+
+                        <div class="entries-gallery">
+
+                            @foreach (var entry in Model.Entries)
+                            {
+                                <div class="entry-card">
+
+                                    <img src="@entry.PhotoImagePath"
+                                         class="entry-card__image"
+                                         alt="@entry.PhotoTitle"
+                                         onerror="this.src='https://placehold.co/400x400/eef5fb/667085?text=No+Image'" />
+
+                                    <div class="entry-card__body">
+
+                                        <h3 class="entry-card__title">
+                                            @entry.PhotoTitle
+                                        </h3>
+
+                                        <div class="entry-card__badges">
+
+                                            @if (entry.Rank.HasValue)
+                                            {
+                                                <span class="entry-badge entry-badge--rank">
+                                                    #@entry.Rank
+                                                </span>
+                                            }
+
+                                            @if (entry.AverageScore.HasValue)
+                                            {
+                                                <span class="entry-badge entry-badge--score">
+                                                    ⭐ @entry.AverageScore.Value.ToString("F1")
+                                                </span>
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+            <div class="contest-detail-sidebar">
+
+                <div class="contest-info-panel">
+
+                    <h3>📋 Thông tin cuộc thi</h3>
+
+                    <div class="contest-info-row">
+                        <span class="contest-info-label">Trạng thái</span>
+                        <span class="contest-badge @statusClass">
+                            @statusLabels.GetValueOrDefault((int)Model.Status, "Không xác định")
+                        </span>
+                    </div>
+
+                    <div class="contest-info-row">
+                        <span class="contest-info-label">Ngày bắt đầu</span>
+                        <span class="contest-info-value">
+                            @Model.SubmissionStartDate.ToString("dd/MM/yyyy")
+                        </span>
+                    </div>
+
+                    <div class="contest-info-row">
+                        <span class="contest-info-label">Ngày kết thúc</span>
+                        <span class="contest-info-value">
+                            @Model.SubmissionEndDate.ToString("dd/MM/yyyy")
+                        </span>
+                    </div>
+
+                    <div class="contest-info-row">
+                        <span class="contest-info-label">Bài dự thi</span>
+                        <span class="contest-info-value">
+                            @Model.EntryCount
+                        </span>
+                    </div>
+
+                </div>
+
+                @if (isOpen)
+                {
+                    <a class="contest-submit-btn" href="/cuoc-thi/@Model.Id/submit">
+                        📷 Gửi bài dự thi
+                    </a>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+</section>

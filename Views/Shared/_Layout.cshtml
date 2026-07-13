@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/BTLWEB.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <header class="site-header">
@@ -37,8 +38,9 @@
                     <a class="auth-actions__button" asp-controller="Account" asp-action="Profile">Hồ sơ</a>
                     @if (User.IsInRole(RoleNames.Admin))
                     {
-                        <a class="auth-actions__button" href="/Admin/UserManagement">Quản trị</a>
+                        <a class="auth-actions__button" href="/Admin/UserManagement">Người dùng</a>
                         <a class="auth-actions__button" href="/Admin/Articles">Bài viết</a>
+                        <a class="auth-actions__button" href="/Admin/Competition">Cuộc thi</a>
                     }
                     <form class="auth-actions__form" asp-controller="Auth" asp-action="Logout" method="post">
                         @Html.AntiForgeryToken()

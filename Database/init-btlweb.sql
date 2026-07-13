@@ -238,3 +238,68 @@ BEGIN
     CREATE INDEX IX_ArticleAdminLogs_ActorUserId_CreatedAtUtc ON dbo.ArticleAdminLogs(ActorUserId, CreatedAtUtc);
 END;
 GO
+IF OBJECT_ID(N'dbo.Competitions', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Competitions
+    (
+        Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Competitions PRIMARY KEY,
+        Name NVARCHAR(255) NOT NULL,
+        Description NVARCHAR(MAX) NULL,
+        Rules NVARCHAR(MAX) NULL,
+        SubmissionStartDate DATETIME2 NOT NULL,
+        SubmissionEndDate DATETIME2 NOT NULL,
+        Status INT NOT NULL CONSTRAINT DF_Competitions_Status DEFAULT(0),
+        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_Competitions_CreatedAt DEFAULT(GETDATE()),
+        CreatedByUserId INT NULL,
+        UpdatedAt DATETIME2 NULL,
+        ImageUrl NVARCHAR(500) NULL,
+        CONSTRAINT FK_Competitions_Users FOREIGN KEY (CreatedByUserId) REFERENCES dbo.Users(UserId) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IX_Competitions_Status ON dbo.Competitions(Status);
+END;
+GO
+
+IF OBJECT_ID(N'dbo.Photos', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Photos
+    (
+        Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Photos PRIMARY KEY,
+        Title NVARCHAR(255) NOT NULL,
+        Description NVARCHAR(MAX) NULL,
+        ImagePath NVARCHAR(500) NOT NULL,
+        UserId INT NOT NULL,
+        Status INT NOT NULL CONSTRAINT DF_Photos_Status DEFAULT(0),
+        UploadedAt DATETIME2 NOT NULL CONSTRAINT DF_Photos_UploadedAt DEFAULT(GETDATE()),
+        FileSize BIGINT NOT NULL CONSTRAINT DF_Photos_FileSize DEFAULT(0),
+        FileExtension NVARCHAR(20) NULL,
+        CONSTRAINT FK_Photos_Users FOREIGN KEY (UserId) REFERENCES dbo.Users(UserId)
+    );
+
+    CREATE INDEX IX_Photos_UserId ON dbo.Photos(UserId);
+END;
+GO
+
+IF OBJECT_ID(N'dbo.CompetitionEntries', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.CompetitionEntries
+    (
+        Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CompetitionEntries PRIMARY KEY,
+        CompetitionId INT NOT NULL,
+        UserId INT NOT NULL,
+        PhotoId INT NOT NULL,
+        SubmittedAt DATETIME2 NOT NULL CONSTRAINT DF_CompetitionEntries_SubmittedAt DEFAULT(GETDATE()),
+        Status INT NOT NULL CONSTRAINT DF_CompetitionEntries_Status DEFAULT(0),
+        AverageScore FLOAT NULL,
+        Rank INT NULL,
+        AdminNote NVARCHAR(500) NULL,
+        CONSTRAINT FK_CompetitionEntries_Competitions FOREIGN KEY (CompetitionId) REFERENCES dbo.Competitions(Id) ON DELETE CASCADE,
+        CONSTRAINT FK_CompetitionEntries_Users FOREIGN KEY (UserId) REFERENCES dbo.Users(UserId),
+        CONSTRAINT FK_CompetitionEntries_Photos FOREIGN KEY (PhotoId) REFERENCES dbo.Photos(Id) ON DELETE CASCADE
+    );
+
+    CREATE UNIQUE INDEX IX_CompetitionEntries_CompetitionId_UserId ON dbo.CompetitionEntries(CompetitionId, UserId);
+    CREATE INDEX IX_CompetitionEntries_Status ON dbo.CompetitionEntries(Status);
+    CREATE INDEX IX_CompetitionEntries_Rank ON dbo.CompetitionEntries(Rank);
+END;
+GO

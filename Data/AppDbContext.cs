@@ -18,6 +18,9 @@ public class AppDbContext : DbContext
     public DbSet<UserRoleHistory> UserRoleHistories => Set<UserRoleHistory>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<ArticleAdminLog> ArticleAdminLogs => Set<ArticleAdminLog>();
+    public DbSet<BTLWEB.Models.Competition.Competition> Competitions => Set<BTLWEB.Models.Competition.Competition>();
+    public DbSet<BTLWEB.Models.Competition.CompetitionEntry> CompetitionEntries => Set<BTLWEB.Models.Competition.CompetitionEntry>();
+    public DbSet<BTLWEB.Models.Competition.Photo> Photos => Set<BTLWEB.Models.Competition.Photo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -246,6 +249,102 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.User)
                 .WithMany(x => x.PasswordResetTokens)
                 .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BTLWEB.Models.Competition.Competition>(entity =>
+        {
+            entity.ToTable("Competitions");
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Name)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(x => x.Description)
+                .HasColumnType("nvarchar(max)");
+
+            entity.Property(x => x.Rules)
+                .HasColumnType("nvarchar(max)");
+
+            entity.Property(x => x.SubmissionStartDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(x => x.SubmissionEndDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(x => x.CreatedAt)
+                .HasColumnType("datetime2");
+
+            entity.Property(x => x.UpdatedAt)
+                .HasColumnType("datetime2");
+
+            entity.HasIndex(x => x.Status);
+
+            entity.HasOne(x => x.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<BTLWEB.Models.Competition.Photo>(entity =>
+        {
+            entity.ToTable("Photos");
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Title)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(x => x.Description)
+                .HasColumnType("nvarchar(max)");
+
+            entity.Property(x => x.ImagePath)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(x => x.FileExtension)
+                .HasMaxLength(20);
+
+            entity.Property(x => x.UploadedAt)
+                .HasColumnType("datetime2");
+
+            entity.HasIndex(x => x.UserId);
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BTLWEB.Models.Competition.CompetitionEntry>(entity =>
+        {
+            entity.ToTable("CompetitionEntries");
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.SubmittedAt)
+                .HasColumnType("datetime2");
+
+            entity.Property(x => x.AdminNote)
+                .HasMaxLength(500);
+
+            entity.HasIndex(x => new { x.CompetitionId, x.UserId }).IsUnique();
+            entity.HasIndex(x => x.Status);
+            entity.HasIndex(x => x.Rank);
+
+            entity.HasOne(x => x.Competition)
+                .WithMany(x => x.Entries)
+                .HasForeignKey(x => x.CompetitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.Photo)
+                .WithMany()
+                .HasForeignKey(x => x.PhotoId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

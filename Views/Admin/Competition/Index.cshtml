@@ -1,0 +1,93 @@
+@model List<CompetitionListViewModel>
+
+@{
+    ViewData["Title"] = "Quản lý cuộc thi";
+    var statusLabels = new Dictionary<int, string>
+    {
+        { 0, "Chờ duyệt" },
+        { 1, "Đang mở" },
+        { 2, "Đang chấm" },
+        { 3, "Đã kết thúc" },
+        { 4, "Đã xuất bản" }
+    };
+    var statusColors = new Dictionary<int, string>
+    {
+        { 0, "status-pill--warning" },
+        { 1, "status-pill" },
+        { 2, "status-pill--primary" },
+        { 3, "status-pill--danger" },
+        { 4, "status-pill" }
+    };
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Quản lý cuộc thi</h1>
+            <a class="btn btn-primary" href="/Admin/Competition/Create">+ Tạo cuộc thi</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Tên cuộc thi</th>
+                    <th>Thời gian bắt đầu</th>
+                    <th>Thời gian kết thúc</th>
+                    <th>Số bài dự thi</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var competition in Model)
+                {
+                    <tr>
+                        <td><strong>@competition.Name</strong></td>
+                        <td>@competition.SubmissionStartDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@competition.SubmissionEndDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@competition.EntryCount</td>
+                        <td>
+                            <span class="status-pill @statusColors.GetValueOrDefault((int)competition.Status, "status-pill--warning")">
+                                @statusLabels.GetValueOrDefault((int)competition.Status, "Không xác định")
+                            </span>
+                        </td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary" href="/Admin/Competition/@competition.Id/Edit">Sửa</a>
+                            <form method="post" action="/Admin/Competition/@competition.Id/ChangeStatus" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <select name="newStatus" onchange="this.form.submit()" class="form-select form-select-sm d-inline-block w-auto">
+                                    <option value="">Chuyển trạng thái</option>
+                                    <option value="0">Chờ duyệt</option>
+                                    <option value="1">Đang mở</option>
+                                    <option value="2">Đang chấm</option>
+                                    <option value="3">Đã kết thúc</option>
+                                    <option value="4">Đã xuất bản</option>
+                                </select>
+                            </form>
+                            <form method="post" action="/Admin/Competition/@competition.Id/Delete" style="display:inline"
+                                  onsubmit="return confirm('Xóa cuộc thi này?')">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">Chưa có cuộc thi nào.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
