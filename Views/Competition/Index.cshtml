@@ -1,0 +1,112 @@
+@model List<CompetitionListViewModel>
+
+@{
+    ViewData["Title"] = "Cuộc thi";
+    var statusLabels = new Dictionary<int, string>
+    {
+        { 0, "Chờ duyệt" },
+        { 1, "Đang mở" },
+        { 2, "Đang chấm" },
+        { 3, "Đã kết thúc" },
+        { 4, "Đã xuất bản" }
+    };
+
+    var isOpen = (CompetitionStatus s) => s == CompetitionStatus.OpenForSubmission;
+}
+
+<!-- Hero Section -->
+<section class="contest-hero">
+    <div class="page-shell">
+        <div class="contest-hero__content">
+            <span class="contest-hero__badge">&#127912; Cuộc thi nhiếp ảnh</span>
+            <h1 class="contest-hero__title">Thử thách tài năng</h1>
+            <p class="contest-hero__desc">Tham gia các cuộc thi nhiếp ảnh, gửi tác phẩm của bạn và giành giải thưởng. Cơ hội để tác phẩm của bạn được công nhận!</p>
+        </div>
+    </div>
+</section>
+
+<section class="contest-section">
+    <div class="page-shell">
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert--success">
+                <span class="alert__icon">&#10003;</span>
+                <span>@successMessage</span>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert--error">
+                <span class="alert__icon">&#9888;</span>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <div class="contest-filters">
+            <button class="contest-filter-btn contest-filter-btn--active">Tất cả</button>
+            <button class="contest-filter-btn">Đã kết thúc</button>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="contest-grid contest-grid--single">
+                @foreach (var competition in Model)
+                {
+                    <article class="contest-card-large">
+                        <div class="contest-card-large__image-wrapper">
+                            @if (!string.IsNullOrEmpty(competition.ImageUrl))
+                            {
+                                <img src="@competition.ImageUrl" class="contest-card-large__image" alt="@competition.Name" />
+                            }
+                            else
+                            {
+                                <div class="contest-card-large__placeholder">
+                                    <span>&#128247;</span>
+                                </div>
+                            }
+                            <div class="contest-card-large__badge">
+                                @statusLabels.GetValueOrDefault((int)competition.Status, "Không xác định")
+                            </div>
+                        </div>
+
+                        <div class="contest-card-large__content">
+                            <h2 class="contest-card-large__title">@competition.Name</h2>
+                            
+                            <div class="contest-card-large__stats">
+                                <div class="contest-card-large__stat">
+                                    <span class="contest-card-large__stat-label">Hạn nộp ảnh</span>
+                                    <span class="contest-card-large__stat-value">@competition.SubmissionEndDate.ToString("dd-MM-yyyy")</span>
+                                    <span class="contest-card-large__stat-sub">@competition.SubmissionEndDate.ToString("HH:mm")</span>
+                                </div>
+                                
+                                <div class="contest-card-large__stat">
+                                    <span class="contest-card-large__stat-label">Tác giả</span>
+                                    <span class="contest-card-large__stat-value">@competition.EntryCount</span>
+                                </div>
+                                
+                                <div class="contest-card-large__stat">
+                                    <span class="contest-card-large__stat-label">Tác phẩm</span>
+                                    <span class="contest-card-large__stat-value">@competition.EntryCount</span>
+                                </div>
+                            </div>
+
+                            <a class="contest-btn" href="/cuoc-thi/@competition.Id">
+                                Xem chi tiết
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="contest-empty">
+                <div class="contest-empty__icon">&#128247;</div>
+                <h3>Chưa có cuộc thi nào</h3>
+                <p>Hiện tại chưa có cuộc thi nào đang diễn ra. Vui lòng quay lại sau!</p>
+            </div>
+        }
+    </div>
+</section>

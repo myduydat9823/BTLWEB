@@ -43,6 +43,11 @@ builder.Services.AddScoped<IDataEncryptionService, DataEncryptionService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+builder.Services.AddScoped<ICompetitionRepository, CompetitionRepository>();
+builder.Services.AddScoped<IEntryRepository, EntryRepository>();
+builder.Services.AddScoped<IPhotoRepository, PhotoRepository>();
+builder.Services.AddScoped<ICompetitionService, CompetitionService>();
+builder.Services.AddScoped<IEntryService, EntryService>();
 
 var app = builder.Build();
 
@@ -71,8 +76,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        await dbContext.Database.EnsureCreatedAsync();
-        await AppDbSchemaInitializer.EnsureAuthSchemaAsync(dbContext);
+        await AppDbSchemaInitializer.EnsureSchemaAsync(dbContext);
         await AppDbSeeder.SeedAsync(dbContext, app.Configuration);
     }
     catch (Exception ex)

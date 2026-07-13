@@ -1,0 +1,78 @@
+@model List<EntryListViewModel>
+
+@{
+    ViewData["Title"] = "Bài dự thi của tôi";
+    var statusLabels = new Dictionary<int, string>
+    {
+        { 0, "Chờ duyệt" },
+        { 1, "Đã duyệt" },
+        { 2, "Từ chối" }
+    };
+    var statusColors = new Dictionary<int, string>
+    {
+        { 0, "status-pill--warning" },
+        { 1, "status-pill" },
+        { 2, "status-pill--danger" }
+    };
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <h1>Bài dự thi của tôi</h1>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        @if (Model.Any())
+        {
+            <div class="row g-4 mt-3">
+                @foreach (var entry in Model)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100">
+                            <img src="@entry.PhotoImagePath" class="card-img-top" alt="@entry.PhotoTitle"
+                                 style="height: 200px; object-fit: cover;" onerror="this.src='/images/placeholder.jpg'" />
+                            <div class="card-body">
+                                <h5 class="card-title">@entry.PhotoTitle</h5>
+                                <p class="card-text text-muted small">
+                                    <strong>Ngày gửi:</strong> @entry.SubmittedAt.ToString("dd/MM/yyyy HH:mm")<br />
+                                    <strong>Mô tả:</strong> @(string.IsNullOrEmpty(entry.PhotoDescription) ? "Không có mô tả" : entry.PhotoDescription)
+                                </p>
+                                <span class="status-pill @statusColors.GetValueOrDefault((int)entry.Status, "status-pill--warning")">
+                                    @statusLabels.GetValueOrDefault((int)entry.Status, "Không xác định")
+                                </span>
+                                @if (entry.AverageScore.HasValue)
+                                {
+                                    <span class="badge bg-info ms-2">Điểm: @entry.AverageScore.Value.ToString("F1")</span>
+                                }
+                                @if (entry.Rank.HasValue)
+                                {
+                                    <span class="badge bg-warning text-dark ms-2">#@entry.Rank</span>
+                                }
+                                @if (!string.IsNullOrEmpty(entry.AdminNote))
+                                {
+                                    <div class="mt-2 p-2 bg-light rounded">
+                                        <small><strong>Ghi chú admin:</strong> @entry.AdminNote</small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <p class="text-muted">Bạn chưa tham gia cuộc thi nào.</p>
+                <a class="btn btn-primary" href="/cuoc-thi">Xem cuộc thi</a>
+            </div>
+        }
+    </div>
+</section>

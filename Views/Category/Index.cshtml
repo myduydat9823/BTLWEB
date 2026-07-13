@@ -5,26 +5,86 @@
     var fallbackImage = "https://placehold.co/900x600/e7eef6/1d3557?text=Anh+%26+Doi+song";
 }
 
+@using BTLWEB.Models.Competition
+@{
+    var statusLabels = new Dictionary<int, string>
+    {
+        { 0, "Chờ duyệt" },
+        { 1, "Đang mở" },
+        { 2, "Đang chấm" },
+        { 3, "Đã kết thúc" },
+        { 4, "Đã xuất bản" }
+    };
+}
+
 <section class="category-hero">
     <div class="page-shell">
         <a class="breadcrumb-link" href="/">Trang chủ</a>
         <h1>@Model.CategoryName</h1>
-        <p>Đang hiển thị các bài viết thuộc chuyên mục này. URL dùng slug "@Model.CategorySlug", truy vấn lọc theo CategoryId = @Model.CategoryId.</p>
+        <p>Đang hiển thị các bài viết thuộc chuyên mục này.</p>
     </div>
 </section>
 
 <section class="page-shell category-page">
-    @if (Model.Posts.Count > 0)
+    @if (Model.Competitions.Count > 0)
     {
-        <div class="news-grid">
-            @foreach (var post in Model.Posts)
-            {
-                <partial name="_PostCard" model="@(new PostCardDisplayViewModel(post, fallbackImage, "post-card post-card--compact"))" />
-            }
+        <div class="category-section">
+            <h2>Cuộc thi</h2>
+            <div class="news-grid">
+                @foreach (var competition in Model.Competitions)
+                {
+                    <div class="post-card post-card--compact">
+                        <div class="post-card__image-wrapper" style="position: relative; aspect-ratio: 16/10; overflow: hidden;">
+                            <a href="/cuoc-thi/@competition.Id" style="display: block; width: 100%; height: 100%;">
+                                <img src="@(string.IsNullOrEmpty(competition.ImageUrl) ? fallbackImage : competition.ImageUrl)" 
+                                    alt="@competition.Name" 
+                                    class="post-card__image" 
+                                    style="width: 100%; height: 100%; object-fit: cover;" />
+                            </a>
+                            
+                            <span class="status-pill @(competition.Status == CompetitionStatus.OpenForSubmission ? "status-pill--success" : "status-pill--warning")" 
+                                style="position: absolute; top: 12px; left: 12px; z-index: 2;">
+                                @statusLabels.GetValueOrDefault((int)competition.Status, "Không xác định")
+                            </span>
+                        </div>
+
+                        <div class="post-card__content">
+                            <span class="post-card__category">CUỘC THI</span>
+                            
+                            <h3 class="post-card__title">
+                                <a href="/cuoc-thi/@competition.Id">@competition.Name</a>
+                            </h3>
+                            
+                            <div class="post-card__meta text-muted small mb-2">
+                                <div><strong>Bắt đầu:</strong> @competition.SubmissionStartDate.ToString("dd/MM/yyyy HH:mm")</div>
+                                <div><strong>Kết thúc:</strong> @competition.SubmissionEndDate.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+
+                            <div class="post-card__footer entry-count">
+                                <span class="text-muted small"><strong>Số bài dự thi:</strong> @competition.EntryCount</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
     }
-    else
+
+    @if (Model.Posts.Count > 0)
     {
-        <div class="empty-state">Chuyên mục này chưa có bài viết đã xuất bản.</div>
+        <div class="category-section">
+            <h2>Bài viết</h2>
+            <div class="news-grid">
+                @foreach (var post in Model.Posts)
+                {
+                    <partial name="_PostCard" model="@(new PostCardDisplayViewModel(post, fallbackImage, "post-card post-card--compact"))" />
+                }
+            </div>
+        </div>
+    }
+
+    @if (Model.Posts.Count == 0 && Model.Competitions.Count == 0)
+    {
+        <div class="empty-state">Chuyên mục này chưa có nội dung.</div>
     }
 </section>
