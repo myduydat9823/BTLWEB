@@ -224,6 +224,80 @@ public class ArticleService : IArticleService
         }
     }
 
+    public async Task<OperationResult> ChangeStatusAsync(int id, string status)
+    {
+        if (!PostStatus.All.Contains(status))
+        {
+            return OperationResult.Failure("Trạng thái bài viết không hợp lệ.");
+        }
+
+        var post = await _postRepository.GetByIdAsync(id);
+        if (post is null)
+        {
+            return OperationResult.Failure("Bài viết không tồn tại hoặc đã bị xóa.");
+        }
+
+        post.Status = status;
+        post.UpdatedAtUtc = DateTime.UtcNow;
+        post.Category = null;
+        post.Author = null;
+        post.DeletedByUser = null;
+
+        if (status == PostStatus.Published)
+        {
+            post.PublishedAt ??= DateTime.UtcNow;
+        }
+        else
+        {
+            post.IsFeatured = false;
+        }
+
+        try
+        {
+            await _postRepository.UpdateAsync(post);
+            return OperationResult.Success("Đã cập nhật trạng thái bài viết.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Khong the doi trang thai bai viet {ArticleId}.", id);
+            return OperationResult.Failure("Không thể cập nhật trạng thái bài viết. Vui lòng thử lại.");
+        }
+    }
+
+    public async Task<OperationResult> SoftDeleteAsync(int id, int deletedByUserId)
+    {
+        if (deletedByUserId <= 0)
+        {
+            return OperationResult.Failure("Không xác định được người thực hiện thao tác.");
+        }
+
+        var post = await _postRepository.GetByIdAsync(id);
+        if (post is null)
+        {
+            return OperationResult.Failure("Bài viết không tồn tại hoặc đã bị xóa.");
+        }
+
+        post.IsDeleted = true;
+        post.DeletedAtUtc = DateTime.UtcNow;
+        post.DeletedByUserId = deletedByUserId;
+        post.UpdatedAtUtc = DateTime.UtcNow;
+        post.IsFeatured = false;
+        post.Category = null;
+        post.Author = null;
+        post.DeletedByUser = null;
+
+        try
+        {
+            await _postRepository.UpdateAsync(post);
+            return OperationResult.Success("Đã xóa mềm bài viết.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Khong the xoa mem bai viet {ArticleId}.", id);
+            return OperationResult.Failure("Không thể xóa bài viết. Vui lòng thử lại.");
+        }
+    }
+
     private async Task<OperationResult> ValidateArticleRequestAsync(ArticleCreateViewModel model)
     {
         if (!PostStatus.All.Contains(model.Status))

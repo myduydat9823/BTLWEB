@@ -10,4 +10,6 @@ public interface IArticleService
     Task<ArticleEditViewModel> BuildEditViewModelAsync(ArticleEditViewModel model);
     Task<OperationResult<int>> CreateAsync(ArticleCreateViewModel model, int authorId, CancellationToken cancellationToken = default);
     Task<OperationResult> UpdateAsync(ArticleEditViewModel model, CancellationToken cancellationToken = default);
+    Task<OperationResult> ChangeStatusAsync(int id, string status);
+    Task<OperationResult> SoftDeleteAsync(int id, int deletedByUserId);
 }

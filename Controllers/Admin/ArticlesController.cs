@@ -106,4 +106,28 @@ public class ArticlesController : Controller
         TempData["SuccessMessage"] = result.Message;
         return RedirectToAction(nameof(Index));
     }
+
+    [HttpPost("{id:int}/ChangeStatus")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeStatus(int id, string status)
+    {
+        var result = await _articleService.ChangeStatusAsync(id, status);
+        TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("{id:int}/Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await _articleService.SoftDeleteAsync(id, userId.Value);
+        TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+        return RedirectToAction(nameof(Index));
+    }
 }

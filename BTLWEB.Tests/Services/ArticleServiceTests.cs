@@ -262,6 +262,58 @@ public class ArticleServiceTests
         Assert.Contains("/uploads/articles/test.jpg", uploadService.DeletedPaths);
     }
 
+    [Fact]
+    public async Task ChangeStatusAsync_ShouldPublishArticleAndSetPublishedAt()
+    {
+        var repository = new FakeAdminPostRepository();
+        repository.Posts.Add(CreateExistingPost());
+        var service = CreateService(repository);
+
+        var result = await service.ChangeStatusAsync(4, PostStatus.Published);
+
+        Assert.True(result.Succeeded);
+        var post = Assert.Single(repository.Posts);
+        Assert.Equal(PostStatus.Published, post.Status);
+        Assert.NotNull(post.PublishedAt);
+        Assert.NotNull(post.UpdatedAtUtc);
+    }
+
+    [Fact]
+    public async Task ChangeStatusAsync_ShouldRemoveFeaturedFlagWhenHidingArticle()
+    {
+        var repository = new FakeAdminPostRepository();
+        var post = CreateExistingPost();
+        post.Status = PostStatus.Published;
+        post.IsFeatured = true;
+        repository.Posts.Add(post);
+        var service = CreateService(repository);
+
+        var result = await service.ChangeStatusAsync(4, PostStatus.Hidden);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(PostStatus.Hidden, post.Status);
+        Assert.False(post.IsFeatured);
+    }
+
+    [Fact]
+    public async Task SoftDeleteAsync_ShouldMarkArticleDeletedAndClearFeaturedFlag()
+    {
+        var repository = new FakeAdminPostRepository();
+        var post = CreateExistingPost();
+        post.IsFeatured = true;
+        repository.Posts.Add(post);
+        var service = CreateService(repository);
+
+        var result = await service.SoftDeleteAsync(4, deletedByUserId: 11);
+
+        Assert.True(result.Succeeded);
+        Assert.True(post.IsDeleted);
+        Assert.Equal(11, post.DeletedByUserId);
+        Assert.NotNull(post.DeletedAtUtc);
+        Assert.NotNull(post.UpdatedAtUtc);
+        Assert.False(post.IsFeatured);
+    }
+
     private static ArticleService CreateService(
         FakeAdminPostRepository repository,
         IFileUploadService? fileUploadService = null,
