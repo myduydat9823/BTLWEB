@@ -38,6 +38,7 @@
                     @if (User.IsInRole(RoleNames.Admin))
                     {
                         <a class="auth-actions__button" href="/Admin/UserManagement">Quản trị</a>
+                        <a class="auth-actions__button" href="/Admin/Articles">Bài viết</a>
                     }
                     <form class="auth-actions__form" asp-controller="Auth" asp-action="Logout" method="post">
                         @Html.AntiForgeryToken()

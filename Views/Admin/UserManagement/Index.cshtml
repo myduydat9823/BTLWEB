@@ -6,7 +6,10 @@
 
 <section class="account-shell">
     <div class="account-card">
-        <h1>Quản lý người dùng</h1>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="mb-0">Quản lý người dùng</h1>
+            <a class="btn btn-outline-primary" href="/Admin/Articles">Quản lý bài viết</a>
+        </div>
 
         @if (TempData["SuccessMessage"] is string successMessage)
         {
