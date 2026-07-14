@@ -27,6 +27,32 @@
             <a class="btn btn-primary" href="/Admin/Competition/Create">+ Tạo cuộc thi</a>
         </div>
 
+        <form method="get" asp-action="Index" class="mb-3">
+            <div class="row g-2">
+                <div class="col-auto">
+                    <select name="statusFilter" class="form-select" onchange="this.form.submit()">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="0">Chờ duyệt</option>
+                        <option value="1">Đang mở</option>
+                        <option value="2">Đang chấm</option>
+                        <option value="3">Đã kết thúc</option>
+                        <option value="4">Đã xuất bản</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+
+        <script>
+            // Preserve selected filter value after page reload
+            document.addEventListener('DOMContentLoaded', function() {
+                const statusFilter = '@(ViewBag.StatusFilter ?? "")';
+                const selectElement = document.querySelector('select[name="statusFilter"]');
+                if (selectElement && statusFilter) {
+                    selectElement.value = statusFilter;
+                }
+            });
+        </script>
+
         @if (TempData["SuccessMessage"] is string successMessage)
         {
             <div class="alert alert-success">@successMessage</div>
@@ -61,6 +87,7 @@
                             </span>
                         </td>
                         <td>
+                            <a class="btn btn-sm btn-outline-info" href="/Admin/Competition/@competition.Id/Entries">Bài dự thi</a>
                             <a class="btn btn-sm btn-outline-primary" href="/Admin/Competition/@competition.Id/Edit">Sửa</a>
                             <form method="post" action="/Admin/Competition/@competition.Id/ChangeStatus" style="display:inline">
                                 @Html.AntiForgeryToken()

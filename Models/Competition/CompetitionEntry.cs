@@ -18,6 +18,8 @@ public class CompetitionEntry
 
   public int PhotoId { get; set; }
 
+  public Guid? EntryGroupId { get; set; }
+
   [Required]
   public DateTime SubmittedAt { get; set; } = DateTime.Now;
 

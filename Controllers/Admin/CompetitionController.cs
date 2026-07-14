@@ -13,20 +13,34 @@ namespace BTLWEB.Controllers.Admin;
 public class CompetitionController : Controller
 {
   private readonly ICompetitionService _competitionService;
+  private readonly IEntryService _entryService;
   private readonly ICurrentUserService _currentUserService;
 
   public CompetitionController(
       ICompetitionService competitionService,
+      IEntryService entryService,
       ICurrentUserService currentUserService)
   {
     _competitionService = competitionService;
+    _entryService = entryService;
     _currentUserService = currentUserService;
   }
 
   [HttpGet("")]
-  public async Task<IActionResult> Index()
+  public async Task<IActionResult> Index(int? statusFilter)
   {
-    var competitions = await _competitionService.GetAllAsync();
+    List<CompetitionListViewModel> competitions;
+
+    if (statusFilter.HasValue)
+    {
+      competitions = await _competitionService.GetByStatusAsync(statusFilter.Value);
+    }
+    else
+    {
+      competitions = await _competitionService.GetAllAsync();
+    }
+
+    ViewBag.StatusFilter = statusFilter;
     return View("~/Views/Admin/Competition/Index.cshtml", competitions);
   }
 
@@ -109,6 +123,38 @@ public class CompetitionController : Controller
     var result = await _competitionService.ChangeStatusAsync(id, newStatus);
     SetTempMessage(result);
     return RedirectToAction(nameof(Index));
+  }
+
+  [HttpGet("{id:int}/Entries")]
+  public async Task<IActionResult> ViewEntries(int id)
+  {
+    var competition = await _competitionService.GetByIdAsync(id);
+    if (competition is null)
+    {
+      return NotFound();
+    }
+
+    var entries = await _competitionService.GetEntriesByCompetitionAsync(id);
+    ViewBag.CompetitionId = id;
+    ViewBag.CompetitionName = competition.Name;
+    return View("~/Views/Admin/Competition/Entries.cshtml", entries);
+  }
+
+  [HttpPost("Entries/Delete/{entryId:int}")]
+  [ValidateAntiForgeryToken]
+  public async Task<IActionResult> DeleteEntry(int entryId, int competitionId)
+  {
+    try
+    {
+      var result = await _entryService.DeleteAsync(entryId);
+      SetTempMessage(result);
+    }
+    catch (Exception ex)
+    {
+      TempData["ErrorMessage"] = "Đã xảy ra lỗi khi xóa bài dự thi: " + ex.Message;
+    }
+
+    return RedirectToAction("ViewEntries", new { id = competitionId });
   }
 
   private void SetTempMessage(OperationResult result)

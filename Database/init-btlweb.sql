@@ -296,6 +296,7 @@ BEGIN
         CompetitionId INT NOT NULL,
         UserId INT NOT NULL,
         PhotoId INT NOT NULL,
+        EntryGroupId UNIQUEIDENTIFIER NULL,
         SubmittedAt DATETIME2 NOT NULL CONSTRAINT DF_CompetitionEntries_SubmittedAt DEFAULT(GETDATE()),
         Status INT NOT NULL CONSTRAINT DF_CompetitionEntries_Status DEFAULT(0),
         AverageScore FLOAT NULL,
@@ -306,7 +307,8 @@ BEGIN
         CONSTRAINT FK_CompetitionEntries_Photos FOREIGN KEY (PhotoId) REFERENCES dbo.Photos(Id) ON DELETE CASCADE
     );
 
-    CREATE UNIQUE INDEX IX_CompetitionEntries_CompetitionId_UserId ON dbo.CompetitionEntries(CompetitionId, UserId);
+    CREATE INDEX IX_CompetitionEntries_CompetitionId_UserId ON dbo.CompetitionEntries(CompetitionId, UserId);
+    CREATE INDEX IX_CompetitionEntries_EntryGroupId ON dbo.CompetitionEntries(EntryGroupId);
     CREATE INDEX IX_CompetitionEntries_Status ON dbo.CompetitionEntries(Status);
     CREATE INDEX IX_CompetitionEntries_Rank ON dbo.CompetitionEntries(Rank);
 END;

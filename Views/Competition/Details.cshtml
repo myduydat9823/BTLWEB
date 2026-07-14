@@ -132,7 +132,7 @@
             
             <div class="contest-detail-stat">
                 <span class="contest-detail-stat__label">Tác giả</span>
-                <span class="contest-detail-stat__value">@Model.EntryCount</span>
+                <span class="contest-detail-stat__value">@Model.AuthorCount</span>
             </div>
             
             <div class="contest-detail-stat">
@@ -203,11 +203,92 @@
                         <h2>📷 Bài dự thi (@Model.EntryCount)</h2>
 
                         <div class="entries-gallery">
+                            @{
+                                // Group entries by EntryGroupId
+                                var groupedEntries = Model.Entries
+                                    .Where(e => e.EntryGroupId.HasValue)
+                                    .GroupBy(e => e.EntryGroupId!.Value)
+                                    .OrderByDescending(g => g.First().SubmittedAt)
+                                    .ToList();
+                                
+                                // Entries without group (single photo submissions)
+                                var singleEntries = Model.Entries
+                                    .Where(e => !e.EntryGroupId.HasValue)
+                                    .OrderByDescending(e => e.SubmittedAt)
+                                    .ToList();
+                            }
 
-                            @foreach (var entry in Model.Entries)
+                            @* Display grouped entries (multiple photos) *@
+                            @foreach (var group in groupedEntries)
                             {
-                                <div class="entry-card">
+                                var firstEntry = group.First();
+                                var isMultiplePhotos = group.Count() > 1;
 
+                                <div class="entry-card @(isMultiplePhotos ? "entry-card--multiple" : "")" 
+                                     data-entry-id="@firstEntry.Id"
+                                     data-photos='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(group.Select(e => e.PhotoImagePath).ToList()))'
+                                     onclick="openPhotoViewer(this)">
+                                    @if (isMultiplePhotos)
+                                    {
+                                        <div class="entry-card__gallery">
+                                            @foreach (var entry in group)
+                                            {
+                                                <img src="@entry.PhotoImagePath"
+                                                     class="entry-card__gallery-image"
+                                                     alt="@entry.PhotoTitle"
+                                                     onerror="this.src='https://placehold.co/400x400/eef5fb/667085?text=No+Image'" />
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <img src="@firstEntry.PhotoImagePath"
+                                             class="entry-card__image"
+                                             alt="@firstEntry.PhotoTitle"
+                                             onerror="this.src='https://placehold.co/400x400/eef5fb/667085?text=No+Image'" />
+                                    }
+
+                                    <div class="entry-card__body">
+
+                                        <h3 class="entry-card__title">
+                                            @firstEntry.PhotoTitle
+                                        </h3>
+
+                                        @if (isMultiplePhotos)
+                                        {
+                                            <p class="entry-card__count">📸 @group.Count() ảnh</p>
+                                        }
+
+                                        <div class="entry-card__badges">
+
+                                            @if (firstEntry.Rank.HasValue)
+                                            {
+                                                <span class="entry-badge entry-badge--rank">
+                                                    #@firstEntry.Rank
+                                                </span>
+                                            }
+
+                                            @if (firstEntry.AverageScore.HasValue)
+                                            {
+                                                <span class="entry-badge entry-badge--score">
+                                                    ⭐ @firstEntry.AverageScore.Value.ToString("F1")
+                                                </span>
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            }
+
+                            @* Display single entries *@
+                            @foreach (var entry in singleEntries)
+                            {
+                                <div class="entry-card" 
+                                     data-entry-id="@entry.Id"
+                                     data-photos='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new List<string> { entry.PhotoImagePath }))'
+                                     onclick="openPhotoViewer(this)">
                                     <img src="@entry.PhotoImagePath"
                                          class="entry-card__image"
                                          alt="@entry.PhotoTitle"
@@ -298,3 +379,73 @@
 
     </div>
 </section>
+
+<!-- Photo Viewer Modal -->
+<div id="photoViewerModal" class="photo-viewer-modal" onclick="closePhotoViewer(event)">
+    <div class="photo-viewer-content" onclick="event.stopPropagation()">
+        <button class="photo-viewer-close" onclick="closePhotoViewer()">&times;</button>
+        <button class="photo-viewer-nav photo-viewer-prev" onclick="changePhoto(-1)">&#10094;</button>
+        <button class="photo-viewer-nav photo-viewer-next" onclick="changePhoto(1)">&#10095;</button>
+        
+        <div class="photo-viewer-main">
+            <img id="photoViewerImage" src="" alt="Photo" />
+        </div>
+        
+        <div class="photo-viewer-info">
+            <div class="photo-viewer-counter">
+                <span id="photoCurrentIndex">1</span> / <span id="photoTotalCount">1</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentPhotos = [];
+        let currentPhotoIndex = 0;
+
+        function openPhotoViewer(element) {
+            const photosJson = element.getAttribute('data-photos');
+            currentPhotos = JSON.parse(photosJson);
+            currentPhotoIndex = 0;
+            
+            updatePhotoViewer();
+            document.getElementById('photoViewerModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePhotoViewer(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('photoViewerModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function changePhoto(direction) {
+            currentPhotoIndex += direction;
+            
+            if (currentPhotoIndex < 0) {
+                currentPhotoIndex = currentPhotos.length - 1;
+            } else if (currentPhotoIndex >= currentPhotos.length) {
+                currentPhotoIndex = 0;
+            }
+            
+            updatePhotoViewer();
+        }
+
+        function updatePhotoViewer() {
+            const img = document.getElementById('photoViewerImage');
+            img.src = currentPhotos[currentPhotoIndex];
+            document.getElementById('photoCurrentIndex').textContent = currentPhotoIndex + 1;
+            document.getElementById('photoTotalCount').textContent = currentPhotos.length;
+        }
+
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('photoViewerModal');
+            if (modal.style.display === 'flex') {
+                if (e.key === 'Escape') closePhotoViewer();
+                if (e.key === 'ArrowLeft') changePhoto(-1);
+                if (e.key === 'ArrowRight') changePhoto(1);
+            }
+        });
+    </script>
+}

@@ -2,6 +2,7 @@ using BTLWEB.Repositories.Interfaces;
 using BTLWEB.Services.Interfaces;
 using BTLWEB.ViewModels;
 using BTLWEB.ViewModels.Competition;
+using BTLWEB.ViewModels.Entry;
 using BTLWEB.Models.Competition;
 
 namespace BTLWEB.Services;
@@ -9,13 +10,16 @@ namespace BTLWEB.Services;
 public class CompetitionService : ICompetitionService
 {
   private readonly ICompetitionRepository _competitionRepository;
+  private readonly IEntryRepository _entryRepository;
   private readonly ILogger<CompetitionService> _logger;
 
   public CompetitionService(
       ICompetitionRepository competitionRepository,
+      IEntryRepository entryRepository,
       ILogger<CompetitionService> logger)
   {
     _competitionRepository = competitionRepository;
+    _entryRepository = entryRepository;
     _logger = logger;
   }
 
@@ -47,12 +51,54 @@ public class CompetitionService : ICompetitionService
     }
   }
 
+  public async Task<List<CompetitionListViewModel>> GetByStatusAsync(int status)
+  {
+    try
+    {
+      var competitions = await _competitionRepository.GetByStatusAsync(status);
+      return competitions.Select(MapToListViewModel).ToList();
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "Khong the lay danh sach cuoc thi theo trang thai {Status}.", status);
+      return [];
+    }
+  }
+
   public async Task<CompetitionDetailViewModel?> GetByIdAsync(int id)
   {
     try
     {
       var competition = await _competitionRepository.GetByIdAsync(id);
       if (competition is null) return null;
+
+      var entries = competition.Entries?.Select(e => new ViewModels.Entry.EntryListViewModel
+      {
+        Id = e.Id,
+        CompetitionId = e.CompetitionId,
+        UserId = e.UserId,
+        PhotoId = e.PhotoId,
+        EntryGroupId = e.EntryGroupId,
+        SubmittedAt = e.SubmittedAt,
+        Status = (EntryStatus)e.Status,
+        AverageScore = e.AverageScore,
+        Rank = e.Rank,
+        AdminNote = e.AdminNote ?? string.Empty,
+        PhotoTitle = e.Photo?.Title ?? string.Empty,
+        PhotoDescription = e.Photo?.Description ?? string.Empty,
+        PhotoImagePath = e.Photo?.ImagePath ?? string.Empty
+      }).ToList() ?? [];
+
+      var authorCount = competition.Entries?.Select(e => e.UserId).Distinct().Count() ?? 0;
+
+      // Count unique submission groups (each group = 1 work)
+      var submissionGroups = competition.Entries?
+          .Where(e => e.EntryGroupId.HasValue)
+          .Select(e => e.EntryGroupId!.Value)
+          .Distinct()
+          .ToList() ?? new List<Guid>();
+
+      var entryCount = submissionGroups.Count > 0 ? submissionGroups.Count : (competition.Entries?.Count ?? 0);
 
       return new CompetitionDetailViewModel
       {
@@ -63,23 +109,10 @@ public class CompetitionService : ICompetitionService
         SubmissionStartDate = competition.SubmissionStartDate,
         SubmissionEndDate = competition.SubmissionEndDate,
         Status = (CompetitionStatus)competition.Status,
-        EntryCount = competition.Entries?.Count ?? 0,
+        EntryCount = entryCount,
+        AuthorCount = authorCount,
         ImageUrl = competition.ImageUrl,
-        Entries = competition.Entries?.Select(e => new ViewModels.Entry.EntryListViewModel
-        {
-          Id = e.Id,
-          CompetitionId = e.CompetitionId,
-          UserId = e.UserId,
-          PhotoId = e.PhotoId,
-          SubmittedAt = e.SubmittedAt,
-          Status = (EntryStatus)e.Status,
-          AverageScore = e.AverageScore,
-          Rank = e.Rank,
-          AdminNote = e.AdminNote ?? string.Empty,
-          PhotoTitle = e.Photo?.Title ?? string.Empty,
-          PhotoDescription = e.Photo?.Description ?? string.Empty,
-          PhotoImagePath = e.Photo?.ImagePath ?? string.Empty
-        }).ToList() ?? []
+        Entries = entries
       };
     }
     catch (Exception ex)
@@ -223,6 +256,20 @@ public class CompetitionService : ICompetitionService
     }
   }
 
+  public async Task<List<EntryListViewModel>> GetEntriesByCompetitionAsync(int competitionId)
+  {
+    try
+    {
+      var entries = await _entryRepository.GetByCompetitionIdAsync(competitionId);
+      return entries.Select(MapToListViewModel).ToList();
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "Khong the lay danh sach bai du thi cho cuoc thi {CompetitionId}.", competitionId);
+      return [];
+    }
+  }
+
   private static CompetitionListViewModel MapToListViewModel(BTLWEB.Models.Competition.Competition c)
   {
     return new CompetitionListViewModel
@@ -234,6 +281,28 @@ public class CompetitionService : ICompetitionService
       EntryCount = c.Entries?.Count ?? 0,
       Status = (CompetitionStatus)c.Status,
       ImageUrl = c.ImageUrl
+    };
+  }
+
+  private static EntryListViewModel MapToListViewModel(CompetitionEntry e)
+  {
+    return new EntryListViewModel
+    {
+      Id = e.Id,
+      CompetitionId = e.CompetitionId,
+      UserId = e.UserId,
+      PhotoId = e.PhotoId,
+      EntryGroupId = e.EntryGroupId,
+      SubmittedAt = e.SubmittedAt,
+      Status = (EntryStatus)e.Status,
+      AverageScore = e.AverageScore,
+      Rank = e.Rank,
+      AdminNote = e.AdminNote ?? string.Empty,
+      PhotoTitle = e.Photo?.Title ?? string.Empty,
+      PhotoDescription = e.Photo?.Description ?? string.Empty,
+      PhotoImagePath = e.Photo?.ImagePath ?? string.Empty,
+      UserFullName = e.User?.FullName ?? string.Empty,
+      UserName = e.User?.Username ?? string.Empty
     };
   }
 }
