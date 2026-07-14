@@ -1,18 +1,18 @@
+@using BTLWEB.Common
+@using BTLWEB.Models
 @model ProfileViewModel
 
 @{
     ViewData["Title"] = "Hồ sơ";
 }
-
-<section class="account-shell">
-    <div class="account-card">
-        <h1>Hồ sơ cá nhân</h1>
-
-        @if (TempData["SuccessMessage"] is string successMessage)
+@if (TempData["SuccessMessage"] is string successMessage)
         {
             <div class="alert alert-success">@successMessage</div>
         }
 
+<section class="account-shell">
+    <div class="account-card">
+        <h1>Hồ sơ cá nhân</h1>
         @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
         {
             <img src="@Model.AvatarUrl" alt="Ảnh đại diện" class="rounded-circle mb-3" style="width: 96px; height: 96px; object-fit: cover;" />
@@ -40,3 +40,65 @@
         </div>
     </div>
 </section>
+
+@if (Model.RoleName != RoleNames.Admin)
+{
+    <section class="account-shell">
+        <div class="account-card">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Tác Phẩm của tôi</h2>
+                    <p class="text-muted mb-0">Bài viết của bạn sẽ được gửi tới quản trị viên để duyệt trước khi công bố.</p>
+                </div>
+                <a asp-action="Create" class="btn btn-primary">Đăng bài</a>
+            </div>
+
+            @if (!Model.MyArticles.Any())
+            {
+                <div class="empty-state">Bạn chưa có bài viết nào. Hãy tạo bài viết đầu tiên.</div>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var article in Model.MyArticles)
+                    {
+                        <div class="border rounded p-3">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <h3 class="h6 mb-1"><a href="/Post/Detail/@article.Slug">@article.Title</a></h3>
+                                    <p class="text-muted mb-1">Danh mục: @article.CategoryName</p>
+                                    <p class="text-muted mb-0">Đăng lúc: @article.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                                </div>
+                                <span class="status-pill @GetStatusClass(article.Status)">@GetStatusText(article.Status)</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+}
+
+@functions {
+    private static string GetStatusText(string status)
+    {
+        return status switch
+        {
+            PostStatus.Pending => "Chờ duyệt",
+            PostStatus.Approved => "Đã duyệt",
+            PostStatus.Rejected => "Từ chối",
+            _ => "Đang xử lý"
+        };
+    }
+
+    private static string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            PostStatus.Pending => "status-pill--warning",
+            PostStatus.Approved => string.Empty,
+            PostStatus.Rejected => "status-pill--danger",
+            _ => "status-pill--muted"
+        };
+    }
+}

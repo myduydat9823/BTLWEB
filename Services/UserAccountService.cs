@@ -12,6 +12,7 @@ public class UserAccountService : IUserAccountService
 
     private readonly IUserRepository _userRepository;
     private readonly IRoleRepository _roleRepository;
+    private readonly IAdminPostRepository _postRepository;
     private readonly IPasswordService _passwordService;
     private readonly IDataEncryptionService _dataEncryptionService;
     private readonly IWebHostEnvironment _webHostEnvironment;
@@ -20,6 +21,7 @@ public class UserAccountService : IUserAccountService
     public UserAccountService(
         IUserRepository userRepository,
         IRoleRepository roleRepository,
+        IAdminPostRepository postRepository,
         IPasswordService passwordService,
         IDataEncryptionService dataEncryptionService,
         IWebHostEnvironment webHostEnvironment,
@@ -27,6 +29,7 @@ public class UserAccountService : IUserAccountService
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
+        _postRepository = postRepository;
         _passwordService = passwordService;
         _dataEncryptionService = dataEncryptionService;
         _webHostEnvironment = webHostEnvironment;
@@ -40,6 +43,8 @@ public class UserAccountService : IUserAccountService
         {
             return OperationResult<ProfileViewModel>.Failure("Không tìm thấy tài khoản.");
         }
+
+        var myPosts = await _postRepository.GetPostsByAuthorIdAsync(userId);
 
         return OperationResult<ProfileViewModel>.Success(new ProfileViewModel
         {
@@ -55,7 +60,19 @@ public class UserAccountService : IUserAccountService
             Address = _dataEncryptionService.Decrypt(user.AddressEncrypted),
             DateOfBirth = _dataEncryptionService.DecryptDate(user.DateOfBirthEncrypted),
             CreatedAtUtc = user.CreatedAtUtc,
-            LastLoginAtUtc = user.LastLoginAtUtc
+            LastLoginAtUtc = user.LastLoginAtUtc,
+            MyArticles = myPosts.Select(post => new ArticleListItemViewModel
+            {
+                Id = post.Id,
+                Title = post.Title,
+                Slug = post.Slug,
+                ThumbnailUrl = post.ThumbnailUrl,
+                CategoryName = post.Category?.Name ?? "Chưa phân loại",
+                Status = post.Status,
+                CreatedAtUtc = post.CreatedAtUtc,
+                PublishedAt = post.PublishedAt,
+                ViewCount = post.ViewCount
+            }).ToList()
         });
     }
 

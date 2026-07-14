@@ -85,9 +85,9 @@
     {
         return status switch
         {
-            PostStatus.Published => "Xuất bản",
-            PostStatus.Hidden => "Ẩn",
-            PostStatus.Archived => "Lưu trữ",
+            PostStatus.Pending => "Chờ duyệt",
+            PostStatus.Approved => "Đã duyệt",
+            PostStatus.Rejected => "Từ chối",
             _ => "Nháp"
         };
     }

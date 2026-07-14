@@ -143,7 +143,7 @@ public class ArticleService : IArticleService
 
         var now = DateTime.UtcNow;
         var status = model.Status;
-        var publishedAt = status == PostStatus.Published
+        var publishedAt = PostStatus.IsVisibleStatus(status)
             ? model.PublishedAt ?? now
             : model.PublishedAt;
 
@@ -159,7 +159,7 @@ public class ArticleService : IArticleService
             CategoryId = model.CategoryId,
             AuthorId = authorId,
             Status = status,
-            IsFeatured = status == PostStatus.Published && model.IsFeatured,
+            IsFeatured = PostStatus.IsVisibleStatus(status) && model.IsFeatured,
             PublishedAt = publishedAt,
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
@@ -230,8 +230,8 @@ public class ArticleService : IArticleService
         existingPost.ThumbnailUrl = uploadedThumbnailUrl ?? existingPost.ThumbnailUrl;
         existingPost.CategoryId = model.CategoryId;
         existingPost.Status = model.Status;
-        existingPost.IsFeatured = model.Status == PostStatus.Published && model.IsFeatured;
-        existingPost.PublishedAt = model.Status == PostStatus.Published
+        existingPost.IsFeatured = PostStatus.IsVisibleStatus(model.Status) && model.IsFeatured;
+        existingPost.PublishedAt = PostStatus.IsVisibleStatus(model.Status)
             ? model.PublishedAt ?? DateTime.UtcNow
             : model.PublishedAt;
         existingPost.UpdatedAtUtc = DateTime.UtcNow;
@@ -281,7 +281,7 @@ public class ArticleService : IArticleService
         post.UpdatedAtUtc = DateTime.UtcNow;
         ClearNavigationProperties(post);
 
-        if (status == PostStatus.Published)
+        if (PostStatus.IsVisibleStatus(status))
         {
             post.PublishedAt ??= DateTime.UtcNow;
         }
@@ -399,19 +399,34 @@ public class ArticleService : IArticleService
 
     private async Task<OperationResult> ValidateArticleRequestAsync(ArticleCreateViewModel model)
     {
-        if (!PostStatus.All.Contains(model.Status))
+        if (!PostStatus.IsReviewStatus(model.Status) && !PostStatus.All.Contains(model.Status))
         {
             return OperationResult.Failure("Trạng thái bài viết không hợp lệ.");
         }
 
-        if (model.IsFeatured && model.Status != PostStatus.Published)
+        if (model.IsFeatured && !PostStatus.IsVisibleStatus(model.Status))
         {
-            return OperationResult.Failure("Chỉ bài đã xuất bản mới được đánh dấu nổi bật.");
+            return OperationResult.Failure("Chỉ bài đã được duyệt mới được đánh dấu nổi bật.");
         }
 
         if (!await _postRepository.CategoryExistsAsync(model.CategoryId))
         {
             return OperationResult.Failure("Danh mục bài viết không tồn tại.");
+        }
+
+        if (model.Thumbnail is not null)
+        {
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+            if (string.IsNullOrWhiteSpace(model.Thumbnail.ContentType) || !allowedTypes.Contains(model.Thumbnail.ContentType.Trim().ToLowerInvariant()))
+            {
+                return OperationResult.Failure("Định dạng ảnh không hợp lệ. Vui lòng tải lên file JPG, PNG hoặc WEBP.");
+            }
+
+            const long maxBytes = 5 * 1024 * 1024;
+            if (model.Thumbnail.Length > maxBytes)
+            {
+                return OperationResult.Failure("Kích thước ảnh quá lớn. Vui lòng tải ảnh có dung lượng ≤ 5 MB.");
+            }
         }
 
         return OperationResult.Success();
@@ -494,9 +509,9 @@ public class ArticleService : IArticleService
         return
         [
             new ArticleStatusOptionViewModel { Value = PostStatus.Draft, Text = "Nháp" },
-            new ArticleStatusOptionViewModel { Value = PostStatus.Published, Text = "Xuất bản" },
-            new ArticleStatusOptionViewModel { Value = PostStatus.Hidden, Text = "Ẩn" },
-            new ArticleStatusOptionViewModel { Value = PostStatus.Archived, Text = "Lưu trữ" }
+            new ArticleStatusOptionViewModel { Value = PostStatus.Pending, Text = "Chờ duyệt" },
+            new ArticleStatusOptionViewModel { Value = PostStatus.Approved, Text = "Đã duyệt" },
+            new ArticleStatusOptionViewModel { Value = PostStatus.Rejected, Text = "Từ chối" }
         ];
     }
 

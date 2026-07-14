@@ -10,9 +10,9 @@ public class PostStatusTests
         var expectedStatuses = new[]
         {
             PostStatus.Draft,
-            PostStatus.Published,
-            PostStatus.Hidden,
-            PostStatus.Archived
+            PostStatus.Pending,
+            PostStatus.Approved,
+            PostStatus.Rejected
         };
 
         Assert.Equal(expectedStatuses, PostStatus.All);

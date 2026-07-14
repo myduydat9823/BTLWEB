@@ -56,14 +56,14 @@ public class ArticleCreateViewModel : IValidatableObject
         MetaTitle = string.IsNullOrWhiteSpace(MetaTitle) ? null : MetaTitle.Trim();
         MetaDescription = string.IsNullOrWhiteSpace(MetaDescription) ? null : MetaDescription.Trim();
 
-        if (!PostStatus.All.Contains(Status))
+        if (!PostStatus.IsReviewStatus(Status) && !PostStatus.All.Contains(Status))
         {
             yield return new ValidationResult("Trạng thái bài viết không hợp lệ.", [nameof(Status)]);
         }
 
-        if (IsFeatured && Status != PostStatus.Published)
+        if (IsFeatured && !PostStatus.IsVisibleStatus(Status))
         {
-            yield return new ValidationResult("Chỉ bài đã xuất bản mới được đánh dấu nổi bật.", [nameof(IsFeatured)]);
+            yield return new ValidationResult("Chỉ bài đã được duyệt mới được đánh dấu nổi bật.", [nameof(IsFeatured)]);
         }
     }
 }

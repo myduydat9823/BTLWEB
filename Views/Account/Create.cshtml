@@ -1,0 +1,172 @@
+@model BTLWEB.ViewModels.Account.AccountCreateArticleViewModel
+
+@{
+    ViewData["Title"] = "Đăng bài";
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h1>Đăng bài</h1>
+                <p class="text-muted mb-0">Gửi tác phẩm của bạn để quản trị viên duyệt trước khi công bố.</p>
+            </div>
+            <a class="btn btn-outline-secondary" asp-action="Profile">Quay lại hồ sơ</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+
+        <form id="createForm" action="/Account/Create" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row gx-4 gy-4">
+                <div class="col-lg-8">
+                    <div class="border rounded p-4 bg-white shadow-sm">
+                        <div class="mb-3">
+                            <label for="Title" class="form-label">Tên tác phẩm <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" id="Title" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Danh mục</label>
+                            <input type="hidden" asp-for="CategoryId" value="@(Model.CategoryId > 0 ? Model.CategoryId : 0)" />
+                            <input type="text" class="form-control" value="Ảnh và Đời sống" readonly />
+                            <div class="form-text">Bài đăng của bạn sẽ được gửi tới chuyên mục Ảnh và Đời sống.</div>
+                            <span asp-validation-for="CategoryId" class="text-danger d-block"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Summary" class="form-label">Mô tả ngắn</label>
+                            <textarea asp-for="Summary" class="form-control" rows="3" placeholder="Mô tả ngắn về tác phẩm của bạn..."></textarea>
+                            <span asp-validation-for="Summary" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Content" class="form-label">Nội dung</label>
+                            <textarea asp-for="Content" class="form-control" rows="8" placeholder="Chia sẻ câu chuyện, cảm hứng hoặc kỹ thuật..."></textarea>
+                            <span asp-validation-for="Content" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Ảnh tác phẩm <span class="text-danger">*</span></label>
+                            <div class="d-flex align-items-center gap-3">
+                                <div id="thumbnailBox" style="width:140px;height:140px;border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                                    <span class="text-muted">Thêm ảnh</span>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-outline-primary" id="btnChooseFile">Chọn file</button>
+                                    <div class="form-text text-muted">Hỗ trợ JPG, PNG, WEBP.</div>
+                                </div>
+                            </div>
+                            <input asp-for="Thumbnail" type="file" id="Thumbnail" name="Thumbnail" accept=".jpg,.jpeg,.png,.webp" class="d-none" />
+                            <span asp-validation-for="Thumbnail" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary" type="submit">Gửi tác phẩm để duyệt</button>
+                            <a class="btn btn-outline-secondary" asp-action="Profile">Hủy</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="border rounded p-4 bg-light h-100">
+                        <h5 class="mb-3">Quy trình duyệt tác phẩm</h5>
+                        <ol class="ps-3 mb-4">
+                            <li class="mb-2"><strong>Gửi tác phẩm:</strong> điền thông tin và tải ảnh lên.</li>
+                            <li class="mb-2"><strong>Chờ kiểm duyệt:</strong> quản trị viên xem xét nội dung.</li>
+                            <li class="mb-0"><strong>Hiển thị công khai:</strong> tác phẩm được xuất bản khi duyệt thành công.</li>
+                        </ol>
+                        <div class="p-3 bg-white rounded border">
+                            <h6 class="mb-2">Lưu ý</h6>
+                            <ul class="mb-0 small">
+                                <li>Ảnh chất lượng cao, rõ nét.</li>
+                                <li>Nội dung phù hợp, không vi phạm bản quyền.</li>
+                                <li>Tác phẩm phải là của chính bạn.</li>
+                                <li>Không có nội dung không phù hợp.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm ảnh mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex gap-4">
+                <div style="flex:0 0 420px;">
+                    <div id="previewImageWrap" style="box-shadow:0 4px 12px rgba(0,0,0,.12);padding:8px;background:#fff;">
+                        <img id="previewImage" src="" alt="Preview" style="max-width:100%;height:auto;display:block;" />
+                    </div>
+                </div>
+                <div style="flex:1;">
+                    <h6 id="previewTitle"></h6>
+                    <label class="form-label">Chọn file ảnh</label>
+                    <div>
+                        <input type="text" id="selectedFileName" readonly class="form-control mb-3" />
+                    </div>
+                    <label class="form-label">Tên tác phẩm (*)</label>
+                    <input type="text" id="modalTitleInput" class="form-control mb-3" />
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary" id="btnConfirmUpload">ĐỒNG Ý TẢI LÊN</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">ĐÓNG LẠI</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function(){
+            const fileInput = document.getElementById('Thumbnail');
+            const btnChoose = document.getElementById('btnChooseFile');
+            const thumbnailBox = document.getElementById('thumbnailBox');
+            const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+            const previewImage = document.getElementById('previewImage');
+            const selectedFileName = document.getElementById('selectedFileName');
+            const modalTitleInput = document.getElementById('modalTitleInput');
+            const titleField = document.getElementById('Title');
+
+            btnChoose.addEventListener('click', () => fileInput.click());
+            thumbnailBox.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                selectedFileName.value = file.name;
+                modalTitleInput.value = titleField.value || '';
+
+                const reader = new FileReader();
+                reader.onload = function(evt){
+                    previewImage.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+                previewModal.show();
+            });
+
+            document.getElementById('btnConfirmUpload').addEventListener('click', function(){
+                if(modalTitleInput.value && titleField)
+                {
+                    titleField.value = modalTitleInput.value;
+                }
+                document.getElementById('createForm').submit();
+            });
+        })();
+    </script>
+}
