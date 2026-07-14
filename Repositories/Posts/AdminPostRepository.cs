@@ -37,7 +37,7 @@ public class AdminPostRepository : IAdminPostRepository
             .Include(x => x.Category)
             .Include(x => x.Author)
             .Where(x => !x.IsDeleted)
-            .Where(x => x.Status == PostStatus.Published)
+            .Where(x => PostStatus.VisibleStatuses.Contains(x.Status))
             .Where(x => x.PublishedAt != null && x.PublishedAt <= now)
             .FirstOrDefaultAsync(x => x.Slug == slug);
     }
@@ -83,7 +83,7 @@ public class AdminPostRepository : IAdminPostRepository
             .Include(x => x.Category)
             .Include(x => x.Author)
             .Where(x => !x.IsDeleted)
-            .Where(x => x.Status == PostStatus.Published)
+            .Where(x => PostStatus.VisibleStatuses.Contains(x.Status))
             .Where(x => x.PublishedAt != null && x.PublishedAt <= now);
 
         if (categoryId is > 0)
@@ -163,7 +163,12 @@ public class AdminPostRepository : IAdminPostRepository
 
         if (!string.IsNullOrWhiteSpace(filter.Status))
         {
-            query = query.Where(x => x.Status == filter.Status);
+            query = filter.Status switch
+            {
+                PostStatus.Approved => query.Where(x => PostStatus.VisibleStatuses.Contains(x.Status)),
+                PostStatus.Rejected => query.Where(x => PostStatus.RejectedStatuses.Contains(x.Status)),
+                _ => query.Where(x => x.Status == filter.Status)
+            };
         }
 
         if (filter.IsFeatured is not null)

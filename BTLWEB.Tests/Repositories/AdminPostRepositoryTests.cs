@@ -142,7 +142,7 @@ public class AdminPostRepositoryTests
         await dbContext.Roles.AddAsync(role);
         await dbContext.Users.AddAsync(author);
         await dbContext.Posts.AddRangeAsync(
-            CreatePost(1, "trien-lam-anh", "Triển lãm ảnh", 1, author.UserId, PostStatus.Published, now.AddDays(-2), now.AddDays(-3)),
+            CreatePost(1, "trien-lam-anh", "Triển lãm ảnh", 1, author.UserId, PostStatus.LegacyPublished, now.AddDays(-2), now.AddDays(-3)),
             CreatePost(2, "draft-category-2", "Bài nháp", 2, author.UserId, PostStatus.Draft, null, now.AddDays(-2)),
             CreatePost(3, "hidden-post", "Bài ẩn", 1, author.UserId, PostStatus.Hidden, now.AddDays(-1), now.AddDays(-1)),
             CreatePost(4, "future-post", "Bài hẹn giờ", 1, author.UserId, PostStatus.Published, now.AddDays(2), now),

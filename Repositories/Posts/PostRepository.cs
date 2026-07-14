@@ -177,7 +177,7 @@ public class PostRepository : IPostRepository
         return _dbContext.Posts
             .AsNoTracking()
             .Include(x => x.Category)
-            .Where(x => x.Status == PostStatus.Published
+            .Where(x => PostStatus.VisibleStatuses.Contains(x.Status)
                 && !x.IsDeleted
                 && x.PublishedAt != null
                 && x.PublishedAt <= now);

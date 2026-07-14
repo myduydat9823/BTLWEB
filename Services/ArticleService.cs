@@ -62,8 +62,8 @@ public class ArticleService : IArticleService
             CategoryId = post.CategoryId,
             ExistingThumbnailUrl = post.ThumbnailUrl,
             IsFeatured = post.IsFeatured,
-            Status = post.Status,
-            PublishedAt = post.PublishedAt,
+            Status = PostStatus.Normalize(post.Status),
+            PublishedAt = ToLocalFormTime(post.PublishedAt),
             MetaTitle = post.MetaTitle,
             MetaDescription = post.MetaDescription
         };
@@ -100,7 +100,7 @@ public class ArticleService : IArticleService
             ThumbnailUrl = post.ThumbnailUrl,
             CategoryName = post.Category?.Name ?? "Chưa phân loại",
             AuthorName = post.Author?.FullName ?? post.Author?.Username,
-            Status = post.Status,
+            Status = PostStatus.Normalize(post.Status),
             IsFeatured = post.IsFeatured,
             CreatedAtUtc = post.CreatedAtUtc,
             UpdatedAtUtc = post.UpdatedAtUtc,
@@ -142,10 +142,10 @@ public class ArticleService : IArticleService
         }
 
         var now = DateTime.UtcNow;
-        var status = model.Status;
+        var status = PostStatus.Normalize(model.Status);
         var publishedAt = PostStatus.IsVisibleStatus(status)
-            ? model.PublishedAt ?? now
-            : model.PublishedAt;
+            ? ToUtcStorageTime(model.PublishedAt) ?? now
+            : ToUtcStorageTime(model.PublishedAt);
 
         var post = new Post
         {
@@ -229,11 +229,12 @@ public class ArticleService : IArticleService
         existingPost.Content = _htmlSanitizerService.Sanitize(model.Content);
         existingPost.ThumbnailUrl = uploadedThumbnailUrl ?? existingPost.ThumbnailUrl;
         existingPost.CategoryId = model.CategoryId;
-        existingPost.Status = model.Status;
-        existingPost.IsFeatured = PostStatus.IsVisibleStatus(model.Status) && model.IsFeatured;
-        existingPost.PublishedAt = PostStatus.IsVisibleStatus(model.Status)
-            ? model.PublishedAt ?? DateTime.UtcNow
-            : model.PublishedAt;
+        var newStatus = PostStatus.Normalize(model.Status);
+        existingPost.Status = newStatus;
+        existingPost.IsFeatured = PostStatus.IsVisibleStatus(newStatus) && model.IsFeatured;
+        existingPost.PublishedAt = PostStatus.IsVisibleStatus(newStatus)
+            ? ToUtcStorageTime(model.PublishedAt) ?? DateTime.UtcNow
+            : ToUtcStorageTime(model.PublishedAt);
         existingPost.UpdatedAtUtc = DateTime.UtcNow;
         existingPost.MetaTitle = string.IsNullOrWhiteSpace(model.MetaTitle) ? null : model.MetaTitle.Trim();
         existingPost.MetaDescription = string.IsNullOrWhiteSpace(model.MetaDescription) ? null : model.MetaDescription.Trim();
@@ -265,6 +266,7 @@ public class ArticleService : IArticleService
             return OperationResult.Failure("Không xác định được người thực hiện thao tác.");
         }
 
+        status = PostStatus.Normalize(status);
         if (!PostStatus.All.Contains(status))
         {
             return OperationResult.Failure("Trạng thái bài viết không hợp lệ.");
@@ -399,7 +401,8 @@ public class ArticleService : IArticleService
 
     private async Task<OperationResult> ValidateArticleRequestAsync(ArticleCreateViewModel model)
     {
-        if (!PostStatus.IsReviewStatus(model.Status) && !PostStatus.All.Contains(model.Status))
+        model.Status = PostStatus.Normalize(model.Status);
+        if (!PostStatus.All.Contains(model.Status))
         {
             return OperationResult.Failure("Trạng thái bài viết không hợp lệ.");
         }
@@ -478,7 +481,7 @@ public class ArticleService : IArticleService
             ThumbnailUrl = post.ThumbnailUrl,
             CategoryName = post.Category?.Name ?? "Chưa phân loại",
             AuthorName = post.Author?.FullName ?? post.Author?.Username,
-            Status = post.Status,
+            Status = PostStatus.Normalize(post.Status),
             IsFeatured = post.IsFeatured,
             CreatedAtUtc = post.CreatedAtUtc,
             PublishedAt = post.PublishedAt,
@@ -520,5 +523,34 @@ public class ArticleService : IArticleService
         post.Category = null;
         post.Author = null;
         post.DeletedByUser = null;
+    }
+
+    private static DateTime? ToUtcStorageTime(DateTime? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        return value.Value.Kind switch
+        {
+            DateTimeKind.Utc => value.Value,
+            DateTimeKind.Local => value.Value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Local).ToUniversalTime()
+        };
+    }
+
+    private static DateTime? ToLocalFormTime(DateTime? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        var utcValue = value.Value.Kind == DateTimeKind.Utc
+            ? value.Value
+            : DateTime.SpecifyKind(value.Value, DateTimeKind.Utc);
+
+        return utcValue.ToLocalTime();
     }
 }

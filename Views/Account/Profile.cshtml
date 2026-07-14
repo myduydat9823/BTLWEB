@@ -82,23 +82,11 @@
 @functions {
     private static string GetStatusText(string status)
     {
-        return status switch
-        {
-            PostStatus.Pending => "Chờ duyệt",
-            PostStatus.Approved => "Đã duyệt",
-            PostStatus.Rejected => "Từ chối",
-            _ => "Đang xử lý"
-        };
+        return PostStatus.GetDisplayText(status);
     }
 
     private static string GetStatusClass(string status)
     {
-        return status switch
-        {
-            PostStatus.Pending => "status-pill--warning",
-            PostStatus.Approved => string.Empty,
-            PostStatus.Rejected => "status-pill--danger",
-            _ => "status-pill--muted"
-        };
+        return PostStatus.GetCssClass(status);
     }
 }

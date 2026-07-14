@@ -83,13 +83,7 @@
 @functions {
     private static string GetStatusText(string status)
     {
-        return status switch
-        {
-            PostStatus.Pending => "Chờ duyệt",
-            PostStatus.Approved => "Đã duyệt",
-            PostStatus.Rejected => "Từ chối",
-            _ => "Nháp"
-        };
+        return PostStatus.GetDisplayText(status);
     }
 
     private static string GetActionText(string action)

@@ -212,6 +212,14 @@ BEGIN
 
     IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Posts_AuthorId' AND object_id = OBJECT_ID(N'dbo.Posts'))
         CREATE INDEX IX_Posts_AuthorId ON dbo.Posts(AuthorId);
+
+    UPDATE dbo.Posts
+    SET Status = N'Approved'
+    WHERE Status = N'Published';
+
+    UPDATE dbo.Posts
+    SET Status = N'Rejected'
+    WHERE Status IN (N'Hidden', N'Archived');
 END;
 GO
 
