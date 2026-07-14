@@ -34,6 +34,16 @@ public class CompetitionRepository : ICompetitionRepository
         .ToListAsync();
   }
 
+  public Task<List<Competition>> GetByStatusAsync(int status)
+  {
+    return _dbContext.Competitions
+        .AsNoTracking()
+        .Include(x => x.Entries)
+        .Where(x => x.Status == status)
+        .OrderByDescending(x => x.CreatedAt)
+        .ToListAsync();
+  }
+
   public Task<Competition?> GetByIdAsync(int id)
   {
     return _dbContext.Competitions

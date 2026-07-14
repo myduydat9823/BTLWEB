@@ -13,6 +13,8 @@ public class EntryListViewModel
 
   public int PhotoId { get; set; }
 
+  public Guid? EntryGroupId { get; set; }
+
   public DateTime SubmittedAt { get; set; }
 
   public EntryStatus Status { get; set; }
@@ -27,5 +29,11 @@ public class EntryListViewModel
   public string PhotoTitle { get; set; } = string.Empty;
   public string PhotoDescription { get; set; } = string.Empty;
   public string PhotoImagePath { get; set; } = string.Empty;
+
+  [Display(Name = "Người dùng")]
+  public string UserFullName { get; set; } = string.Empty;
+
+  [Display(Name = "Tên đăng nhập")]
+  public string UserName { get; set; } = string.Empty;
 }
 

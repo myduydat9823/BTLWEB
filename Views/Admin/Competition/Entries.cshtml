@@ -1,0 +1,71 @@
+@model List<EntryListViewModel>
+
+@{
+    ViewData["Title"] = "Bài dự thi - " + ViewBag.CompetitionName;
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <div class="entries-header">
+            <h1>@ViewBag.CompetitionName</h1>
+            <a class="btn btn-outline-secondary" href="/Admin/Competition">← Quay lại</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        @if (Model.Any())
+        {
+            <table class="admin-table entries-table">
+                <thead>
+                    <tr>
+                        <th>Ảnh</th>
+                        <th>Người dùng</th>
+                        <th>Tiêu đề ảnh</th>
+                        <th>Ngày nộp</th>
+                        <th>Điểm TB</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model)
+                    {
+                        <tr>
+                            <td>
+                                <img class="entry-thumb" src="@entry.PhotoImagePath" alt="@entry.PhotoTitle" />
+                            </td>
+                            <td>
+                                <strong>@entry.UserFullName</strong>
+                                <br />
+                                <small class="text-muted">@entry.UserName</small>
+                            </td>
+                            <td>@entry.PhotoTitle</td>
+                            <td>@entry.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@(entry.AverageScore.HasValue ? entry.AverageScore.Value.ToString("F1") : "-")</td>
+                            <td>
+                                <form method="post" action="/Admin/Competition/Entries/Delete/@entry.Id"
+                                      onsubmit="return confirm('Xóa bài dự thi của @entry.UserFullName?')">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="competitionId" value="@ViewBag.CompetitionId" />
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="empty-state">
+                <p class="mb-0">Chưa có bài dự thi nào cho cuộc thi này.</p>
+            </div>
+        }
+    </div>
+</section>

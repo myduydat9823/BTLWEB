@@ -24,10 +24,9 @@ public class CompetitionController : Controller
   }
 
   [HttpGet("cuoc-thi")]
-  public async Task<IActionResult> Index()
+  public IActionResult Index()
   {
-    var competitions = await _competitionService.GetAllAsync();
-    return View("~/Views/Competition/Index.cshtml", competitions);
+    return RedirectPermanent("/Category/cuoc-thi-anh");
   }
 
   [HttpGet("cuoc-thi/{id:int}")]

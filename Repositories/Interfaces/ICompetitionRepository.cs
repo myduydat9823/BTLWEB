@@ -6,6 +6,7 @@ public interface ICompetitionRepository
 {
   Task<List<Competition>> GetAllAsync();
   Task<List<Competition>> GetActiveAsync();
+  Task<List<Competition>> GetByStatusAsync(int status);
   Task<Competition?> GetByIdAsync(int id);
   Task AddAsync(Competition competition);
   Task UpdateAsync(Competition competition);

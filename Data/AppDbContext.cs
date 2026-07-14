@@ -328,7 +328,8 @@ public class AppDbContext : DbContext
             entity.Property(x => x.AdminNote)
                 .HasMaxLength(500);
 
-            entity.HasIndex(x => new { x.CompetitionId, x.UserId }).IsUnique();
+            entity.HasIndex(x => new { x.CompetitionId, x.UserId });
+            entity.HasIndex(x => x.EntryGroupId);
             entity.HasIndex(x => x.Status);
             entity.HasIndex(x => x.Rank);
 

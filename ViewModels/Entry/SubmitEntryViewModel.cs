@@ -17,6 +17,6 @@ public class SubmitEntryViewModel
 
   [Required]
   [Display(Name = "Ảnh dự thi")]
-  public IFormFile PhotoFile { get; set; } = default!;
+  public List<IFormFile> PhotoFiles { get; set; } = new();
 }
 

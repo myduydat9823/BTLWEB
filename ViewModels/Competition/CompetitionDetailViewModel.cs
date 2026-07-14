@@ -23,6 +23,8 @@ public class CompetitionDetailViewModel
 
   public int EntryCount { get; set; }
 
+  public int AuthorCount { get; set; }
+
   public string? ImageUrl { get; set; }
 
   public List<EntryListViewModel> Entries { get; set; } = new();
