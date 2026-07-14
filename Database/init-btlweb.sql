@@ -313,3 +313,28 @@ BEGIN
     CREATE INDEX IX_CompetitionEntries_Rank ON dbo.CompetitionEntries(Rank);
 END;
 GO
+
+IF OBJECT_ID(N'dbo.CompetitionEntries', N'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH(N'dbo.CompetitionEntries', N'EntryGroupId') IS NULL
+        ALTER TABLE dbo.CompetitionEntries ADD EntryGroupId UNIQUEIDENTIFIER NULL;
+
+    IF COL_LENGTH(N'dbo.CompetitionEntries', N'AverageScore') IS NULL
+        ALTER TABLE dbo.CompetitionEntries ADD AverageScore FLOAT NULL;
+
+    IF COL_LENGTH(N'dbo.CompetitionEntries', N'Rank') IS NULL
+        ALTER TABLE dbo.CompetitionEntries ADD Rank INT NULL;
+
+    IF COL_LENGTH(N'dbo.CompetitionEntries', N'AdminNote') IS NULL
+        ALTER TABLE dbo.CompetitionEntries ADD AdminNote NVARCHAR(500) NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_CompetitionEntries_EntryGroupId' AND object_id = OBJECT_ID(N'dbo.CompetitionEntries'))
+        CREATE INDEX IX_CompetitionEntries_EntryGroupId ON dbo.CompetitionEntries(EntryGroupId);
+
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_CompetitionEntries_Status' AND object_id = OBJECT_ID(N'dbo.CompetitionEntries'))
+        CREATE INDEX IX_CompetitionEntries_Status ON dbo.CompetitionEntries(Status);
+
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_CompetitionEntries_Rank' AND object_id = OBJECT_ID(N'dbo.CompetitionEntries'))
+        CREATE INDEX IX_CompetitionEntries_Rank ON dbo.CompetitionEntries(Rank);
+END;
+GO

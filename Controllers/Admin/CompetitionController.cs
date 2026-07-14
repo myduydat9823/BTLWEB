@@ -67,7 +67,7 @@ public class CompetitionController : Controller
     }
 
     TempData["SuccessMessage"] = result.Message;
-    return Redirect("/cuoc-thi");
+    return RedirectToAction(nameof(Index));
   }
 
   [HttpGet("{id:int}/Edit")]
